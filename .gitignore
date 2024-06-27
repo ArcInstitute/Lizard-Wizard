@@ -1,0 +1,9 @@
+._*
+*~
+.env
+.gcp/
+tmp/
+logs/
+.nextflow/
+.nextflow*
+screenlog.*

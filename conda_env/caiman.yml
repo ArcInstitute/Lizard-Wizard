@@ -1,0 +1,24 @@
+name: caiman
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.9
+  - pip
+  - bokeh
+  - opencv
+  - holoviews
+  - ipython
+  - matplotlib
+  - numpy
+  - psutil
+  - scikit-image
+  - tifffile
+  - caiman
+  - aicspylibczi
+  - xmltodict
+  - tqdm
+  - scipy
+  - pip:
+    - glob2
+    - pprintpp

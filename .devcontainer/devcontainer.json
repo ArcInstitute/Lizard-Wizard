@@ -1,0 +1,45 @@
+{
+    "name": "nextflow_dev",
+    "build": {
+        "dockerfile": "../Dockerfile",
+        "context": "..",
+        "args": {
+            "VARIANT": "3.9",
+            "INSTALL_NODE": "true",
+            "NODE_VERSION": "lts/*"
+        }
+    },
+    "postCreateCommand": "bash .devcontainer/setup.sh",
+    "workspaceMount": "source=${localWorkspaceFolder}/,target=/workspace,type=bind,consistency=cached", 
+    "workspaceFolder": "/workspace",
+    "mounts": [
+        "source=/mnt/NAS/,target=/mnt/NAS/,type=bind,consistency=cached",
+	    "source=${localEnv:HOME}/.gcp/,target=/workspace/.gcp/,type=bind,consistency=cached"
+    ],
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "python.defaultInterpreterPath": "/opt/conda/bin/python"
+            },
+            "extensions": [
+                "github.copilot", 
+                "github.copilot-chat",
+                "ms-python.python", 
+                "ms-python.vscode-pylance", 
+                "EditorConfig.EditorConfig",
+                "codezombiech.gitignore",
+                "Gruntfuggly.todo-tree",
+                "nextflow.nextflow",
+                "redhat.vscode-yaml"
+            ]
+        }
+	},
+	"features": {
+        "ghcr.io/mamba-org/devcontainer-features/micromamba:1": {
+            "version": "latest"
+        },
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {
+            "version": "latest"
+        }
+    }
+}
