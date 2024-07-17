@@ -19,7 +19,7 @@ class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter,
                       argparse.RawDescriptionHelpFormatter):
     pass
 
-desc = 'Concatenates related TIFF files from MolDev '
+desc = "Concatenates related TIFF files from MolDev"
 epi = """DESCRIPTION:
     The script performs the following steps:
     1. Groups related TIFF files based on their base names.

@@ -43,6 +43,7 @@ process MOLDEV_CONCAT {
     def test_image_count = params.test_image_count == 0 ? "" : "--test-image-count ${params.test_image_count}"
     """
     concatenate_moldev_files.py ${test_image_nums} ${test_image_count} \
+      --threads $task.cpus \
       --output-dir tiff_combined ${params.input_dir}
     """
 }
