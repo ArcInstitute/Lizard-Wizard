@@ -1,9 +1,9 @@
 // Subworkflows
-include { SAMPLES_SHEET } from './workflows/samples_sheet.nf'
+include { INPUT } from './workflows/input.nf'
 
 // Main workflow
 workflow {
-  SAMPLES_SHEET()
+    ch_img = INPUT()
 }
 
 
