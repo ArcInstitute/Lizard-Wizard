@@ -1,4 +1,4 @@
-workflow INPUT {
+workflow INPUT_WF {
     // Create a channel of input images
     if(params.file_type == "zeiss"){
         // Zeiss file type

@@ -1,4 +1,4 @@
-workflow MASK {
+workflow MASK_WF {
     take:
     ch_img
 
@@ -6,7 +6,7 @@ workflow MASK {
     // download cellpose models
     ch_models = DOWNLOAD_CELLPOSE_MODELS()
     // mask each image
-    ch_img_mask = MASK_IMAGE(ch_img, ch_models.collect())
+    ch_img_mask = MASK(ch_img, ch_models.collect())
 
     //ch_img_mask.mask.view()
     //ch_img_mask.mask_plot.view()
@@ -16,7 +16,7 @@ workflow MASK {
     mask_plot = ch_img_mask.mask_plot
 }
 
-process MASK_IMAGE {
+process MASK {
     input:
     path img
     path "models/*"
