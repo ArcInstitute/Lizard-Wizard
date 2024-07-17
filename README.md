@@ -1,7 +1,7 @@
 Lizard Wizard
 =============
 
-Calcium imaging analysis for the Arc Institute.
+Calcium imaging analysis Nextflow pipeline for the Arc Institute.
 
 # Dev
 

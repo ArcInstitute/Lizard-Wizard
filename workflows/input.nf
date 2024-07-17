@@ -1,4 +1,5 @@
 workflow INPUT {
+    // Create a channel of input images
     if(params.file_type == "zeiss"){
         // Zeiss file type
         ch_img = Channel.fromPath(file(params.input_dir) / "**.czi", checkIfExists: true)
@@ -12,8 +13,20 @@ workflow INPUT {
     // check that the channel is not empty
     ch_img = ch_img.ifEmpty { error "No image files found in the input directory: ${params.input_dir}" }
 
-    // debug
-    ch_img.view() 
+    // Spot Check: filter the images, if needed
+    /// Note: for moldev, the spot check is done in the MOLDEV_CONCAT process
+    if(params.file_type == "zeiss"){
+        if(params.test_image_nums != null){
+            println "Selecting test images: ${params.test_image_nums}"
+            // convert the string to a list of integers
+            def test_image_nums = params.test_image_nums.split(",").collect{ it.toInteger() }
+            // select indices from the list of images
+            ch_img = ch_img.collect().map{ list -> test_image_nums.collect{ list[it] } }.flatten()
+        } else if (params.test_image_count > 0){
+            println "Selecting ${params.test_image_count} random test images"
+            ch_img = ch_img.randomSample(params.test_image_count)
+        }
+    }
 
     emit:
     ch_img

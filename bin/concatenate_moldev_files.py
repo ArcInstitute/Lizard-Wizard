@@ -42,7 +42,14 @@ parser.add_argument('-t', '--threads', type=int, default=2,
                     help='Number of threads to use')
 parser.add_argument('--version', action='version', version='0.1.0')
 
-def find_tiff_files(input_dir):
+def find_tiff_files(input_dir: str) -> list:
+    """
+    Recursively find all TIFF files in the input directory
+    Args:
+        input_dir: Path to the directory containing TIFF files
+    Returns:
+        List of TIFF file paths
+    """
     # recursively find all "*.tif" files
     logging.info(f"Searching for TIFF files in: {input_dir}")
     tif_files = []
@@ -53,7 +60,14 @@ def find_tiff_files(input_dir):
     logging.info(f"  Found {len(tif_files)} TIFF files")
     return tif_files
 
-def group_tiff_files(tif_files):
+def group_tiff_files(tif_files: list) -> dict:
+    """
+    Group related TIFF files by their base name
+    Args:
+        tif_files: List of TIFF file paths
+    Returns:
+        Dictionary of related TIFF files grouped by their base name
+    """
     # group files by basename
     logging.info("Grouping files by base name")
     file_groups = {}
@@ -72,13 +86,23 @@ def group_tiff_files(tif_files):
     logging.info(f"  Found {len(file_groups)} groups of related files")
     return file_groups
 
-def filter_tiff_files(file_groups, test_image_nums, test_image_count):
+def filter_tiff_files(file_groups: dict, test_image_nums: str, test_image_count: int) -> dict:
+    """
+    Filter the groups of TIFF files based on the provided test_image_nums or test_image_count
+    Args:
+        file_groups: Dictionary of related TIFF files grouped by their base name
+        test_image_nums: Comma-delimited list of indices to select specific image groups
+        test_image_count: Number of randomly selected image groups to process
+    Returns:
+        Dictionary of filtered TIFF files grouped by their base name
+    """
     group_ids = None
     if test_image_nums is not None:
         # select specific image groups to process
         logging.info("Selecting specific image groups")
         test_image_nums = [int(i) for i in test_image_nums.split(',')]
-        group_ids = list(file_groups.keys())[test_image_nums]
+        group_ids = list(file_groups.keys())
+        group_ids = [group_ids[i] for i in test_image_nums if i < len(group_ids)]
     elif test_image_count > 0:
         # randomly select N image groups
         logging.info(f"Selecting {test_image_count} random image groups")
@@ -87,7 +111,14 @@ def filter_tiff_files(file_groups, test_image_nums, test_image_count):
         file_groups = {k: v for k, v in file_groups.items() if k in group_ids}
     return file_groups
 
-def concatenate_images(base_name, files, output_dir):
+def concatenate_images(base_name: str, files: list, output_dir: str) -> None:
+    """
+    Concatenate the image data from related TIFF files and save the combined image
+    Args:
+        base_name: Base name of the related TIFF files
+        files: List of TIFF file paths
+        output_dir: Directory path for storing the combined
+    """
     base_name = os.path.basename(base_name)
     logging.info(f"Concatenating related files for {base_name}")
     
