@@ -8,17 +8,14 @@ import argparse
 ## 3rd party
 import numpy as np
 import matplotlib.pyplot as plt
+import tifffile
+import xml.etree.ElementTree as ET
 import caiman as cm
+from caiman.source_extraction import cnmf
 from caiman.utils.visualization import inspect_correlation_pnr, nb_inspect_correlation_pnr
-## source
+# source 
+from load_tiff import load_tiff_metadata, get_metadata_value, extract_exposure
 
-
-#   decay_time         = 0.5      // the average decay time of a transient
-#   gSig               = 6        // The expected half size of neurons (height, width)
-#   rf                 = 40       // The size of patches for the correlation image
-#   min_SNR            = 3        // Adaptive threshold for transient size
-#   r_values_min       = 0.85     // Threshold for spatial consistency
-#   use_2d             = false    // 2d image processing, instead of 3d
 
 # logging
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
@@ -40,22 +37,31 @@ parser.add_argument('--output-dir', type=str, default="caiman_output",
                     help='Output directory')
 parser.add_argument('-g', '--gSig', type=int, default=6,
                     help='Size of the Gaussian filter')
+parser.add_argument('--rf', type=int, default=40,
+                    help='Size of patches for the correlation image')
+parser.add_argument('--decay-time', type=float, default=0.5,
+                    help='Average decay time of a transient')
+parser.add_argument('--tsub', type=int, default=2,
+                    help='Temporal subsampling factor')
+parser.add_argument('--ssub', type=int, default=2,
+                    help='Spatial subsampling factor')
 parser.add_argument('-p', '--processes', type=int, default=1,
                     help='Number of processes to use')
 
-# variables
-
 # functions
-def setup_cluster(processes: int=1):
+def setup_cluster(processes: int=1) -> int:
     """
     Sets up a new cluster for parallel processing using the CaImAn library.
 
     This function first checks if there is an existing cluster and attempts to close it if found.
     It then sets up a new cluster using all but one of the available CPU cores.
 
+    Args:
+        processes: The number of processes to use in the new cluster. If not specified, the function will use all but one of the available CPU cores.
     Returns:
-    - processes: The number of processes successfully initialized in the new cluster.
+        n_processes: The number of processes successfully initialized in the new cluster.
     """
+    # Initialize the global cluster variable
     global cluster
     cluster = None
 
@@ -86,6 +92,27 @@ def setup_cluster(processes: int=1):
     # Return the cluster and the number of processes
     return n_processes
 
+def close_cluster():
+    """
+    Closes the existing cluster if one is running.
+
+    This function attempts to stop the existing cluster and catches any exceptions that might occur.
+    If no cluster is found, it prints a message indicating that there is no cluster to close.
+    """
+    global cluster
+    if cluster is not None:
+        logging.info("Closing the cluster...")
+        try:
+            # Stop the existing cluster
+            cm.stop_server(dview=cluster)
+            logging.info("  Cluster closed successfully.")
+        except Exception as e:
+            logging.warning(f"Failed to close the cluster: {str(e)}")
+        finally:
+            cluster = None
+    else:
+        logging.info("No cluster to close.")
+
 def plot_correlations(cn_filter, pnr, output_dir):
     """
     Plots the correlation and peak-to-noise ratio images side by side.
@@ -100,7 +127,6 @@ def plot_correlations(cn_filter, pnr, output_dir):
     plt.savefig(outfile)
     plt.close()
     logging.info(f"Correlation and peak-to-noise ratio images saved to {outfile}")
-    #plt.show()
             
     # Create two subplots side by side to show corr and pnr histograms
     fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(12, 6))
@@ -126,7 +152,81 @@ def plot_correlations(cn_filter, pnr, output_dir):
     logging.info(f"Histogram of correlation and peak-to-noise ratio images saved to {outfile}")
     logging.getLogger('matplotlib').setLevel(logging.INFO)
 
+def run_caiman(im, frate: float, decay_time: float, gSig: int, rf: int, tsub: int, ssub: int, n_processes: int,  motion_correct=False):
+    """"
+    Args:
+        im: numpy array of the image data
+        frate: The imaging rate in frames per second
+        decay_time: length of a typical transient in seconds
+        gSig: gaussian width of a 2D gaussian kernel (~1/2 width neuron (pixels))
+        rf: half-size of the patches in pixels. e.g., if rf=40, patches are 80x80
+        tsub: temporal subsampling factor
+        ssub: spatial subsampling factor
+        n_processes: number of processes to use
+        motion_correct: flag for performing motion correction 
+    """
+    logging.info("Running Caiman...")
+
+    # Set various parameters for the CaImAn execution             
+    p = 1                        # order of the autoregressive system
+    K = None                     # upper bound on number of components per patch, in general None
+    Ain = None                   # possibility to seed with predetermined binary masks
+    gSiz = 4 * gSig + 1            # average diameter of a neuron, in general 4*gSig+1
+    stride_cnmf = gSiz + 5       # overlap between patches (pixels) keep >gSiz
+    merge_thresh = .7            # merging threshold, max correlation allowed
+    low_rank_background = None   # None leaves background of each patch intact
+    gnb = -1                     # number of background components (rank) if positive,
+    nb_patch = 0                 # number of background components (rank) per patch if gnb>0,
+    min_corr = .8                # min peak value from correlation image
+    min_pnr = 5                  # min peak to noise ration from PNR image
+    ssub_B = 1                   # additional downsampling factor in space for background
+    ring_size_factor = 1.4       # radius of ring is gSiz*ring_size_factor
+    min_SNR = 3           
+    r_values_min = 0.85   
+    epsilon = 1e-8               # small epsilon to avoid division by zero in PNR calculation
+
+    # Initialize the CNMF model with the specified parameters
+    cnm = cnmf.CNMF(
+        n_processes=n_processes,
+        method_init='corr_pnr',              # use this for 1 photon        
+        k=K,
+        gSig=(gSig, gSig),
+        gSiz=(gSiz, gSiz),
+        merge_thresh=merge_thresh,
+        p=p,
+        dview=cluster,
+        tsub = tsub,
+        ssub = ssub,
+        Ain = Ain,
+        rf = rf,
+        stride = stride_cnmf,
+        only_init_patch = True,                # set it to True to run CNMF-E         
+        gnb = gnb,
+        nb_patch = nb_patch,
+        method_deconvolution = "oasis",        # could use 'cvxpy' alternatively
+        low_rank_background = low_rank_background,
+        update_background_components = True,   # sometimes setting to False improve the results
+        min_corr = min_corr,
+        min_pnr = min_pnr,
+        normalize_init = False,                # just leave as is             
+        center_psf = True,                     # leave as is for 1 photon                    
+        ssub_B = ssub_B,
+        ring_size_factor = ring_size_factor,
+        del_duplicates = True,                 # whether to remove duplicates from initialization
+        border_pix = 0                         # number of pixels to not consider in the borders
+    ) 
+    # Fit the model to the data
+    cnm.fit(im)
+    return cnm
+
 def main(args):
+    # Set logging level for CaImAn
+    logging.getLogger("caiman.cluster").setLevel(logging.ERROR)
+
+    # get the frame rate
+    frate = os.environ["FRATE"]
+    logging.info(f"Frame rate set to: {frate}")
+
     # Create a memory-mapped file using CaImAn from the temp file
     fname_new = cm.save_memmap([args.img_file], base_name='memmap_', order='C')
   
@@ -147,11 +247,21 @@ def main(args):
     # Plot the correlation and peak-to-noise ratio images
     plot_correlations(cn_filter, pnr, args.output_dir)
 
+    # Run Caiman
+    try:
+        cnm = run_caiman(
+            Y, 
+            frate=frate, 
+            decay_time=args.decay_time,
+            gSig=args.gSig,
+            rf=args.rf,
+            tsub=args.tsub,
+            ssub=args.ssub,
+            n_processes=n_processes
+        )
+    finally: 
+        close_cluster()
 
-
-    # Stop the cluster
-    logging.info("Stopping the cluster...")
-    cm.stop_server(dview=cluster)
 
 if __name__ == '__main__':
     args = parser.parse_args()

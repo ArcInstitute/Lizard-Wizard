@@ -32,6 +32,8 @@ parser.add_argument('img_file', type=str,
                     help='Directory path containing the image files')
 parser.add_argument('--file-type', type=str, default='zeiss',
                     help='Type of image file')
+parser.add_argument('--use-2d', action='store_true',
+                    help='2d, so no masking')
 
 # functions
 def segment_image(im_min, model, max_diameter):
@@ -93,6 +95,7 @@ def mask_image(im, im_min, img_file) -> np.ndarray:
     masks, success = segment_image(im_min, model, max_diameter)
 
     # Check if segmentation was successful        
+
     if not success:
         logging.error(f"Segmentation failed for file {img_file}. Proceeding without creating mask.")
 
@@ -171,6 +174,16 @@ def main(args):
         im, frate = load_image_data_czi(args.img_file)
     else:
         raise ValueError(f"File type not recognized: {args.file_type}")
+
+    # Setting frate to environment variable for use in other scripts
+    with open("frate.sh", "w") as outF:
+        outF.write(f"export FRATE={frate}")
+    # Save the image as a tif file, if no masking
+    if args.use_2d:
+        logging.info("2D image, skipping masking")
+        outfile = os.path.splitext(img_file)[0] + "_no-masked.tif"
+        tifffile.imwrite(outfile, im)
+        logging.info(f"No-masked image saved to {outfile}")
 
     # Squeeze the image
     im_min = np.squeeze(np.min(im, axis=1))

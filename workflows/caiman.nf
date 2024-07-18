@@ -12,7 +12,7 @@ process CAIMAN {
     label "process_medium"
 
     input:
-    path file("caiman_temp") / img
+    tuple env(FRATE), path(img)
 
     output:
     path "caiman_output"
@@ -21,8 +21,8 @@ process CAIMAN {
     """
     # set the input paths
     export CAIMAN_DATA=caiman_data
-    rm -rf $CAIMAN_DATA && mkdir -p ${CAIMAN_DATA}/temp
-    cp $img ${CAIMAN_DATA}/temp/
+    rm -rf \$CAIMAN_DATA && mkdir -p \${CAIMAN_DATA}/temp
+    cp $img \${CAIMAN_DATA}/temp/
 
     # run the caiman process
     caiman_run.py -p $task.cpus $img

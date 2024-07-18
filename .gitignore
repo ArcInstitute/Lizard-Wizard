@@ -4,6 +4,7 @@
 .gcp/
 tmp/
 logs/
+work/
 .nextflow/
 .nextflow*
 screenlog.*
