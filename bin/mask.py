@@ -95,9 +95,12 @@ def mask_image(im, im_min, img_file) -> np.ndarray:
     masks, success = segment_image(im_min, model, max_diameter)
 
     # Check if segmentation was successful        
-
     if not success:
         logging.error(f"Segmentation failed for file {img_file}. Proceeding without creating mask.")
+
+    # Save the min projection image
+    base_fname = os.path.splitext(os.path.basename(img_file))[0]
+    tifffile.imwrite(f"{base_fname}_minprojection.tif", im_min)
 
     # Return the masks as a binary array
     return masks
@@ -139,6 +142,10 @@ def plot_mask(original_image, masked_image, mask, save_path=None):
     logging.info(f"Masked image plot saved to {save_path}")
 
 def format_masks(im, im_min, masks: np.ndarray, img_file: str):
+     # Save the masks
+    base_fname = os.path.splitext(os.path.basename(args.img_file))[0]
+    tifffile.imwrite(f"{base_fname}_masks.tif", masks)
+
     # Ensure mask is binary and broadcast the mask to apply it to each time slice
     masked_im = im * masks.astype(bool)[np.newaxis, :, :]
             
@@ -152,12 +159,6 @@ def format_masks(im, im_min, masks: np.ndarray, img_file: str):
     # Plot the original and masked images side by side
     outfile = os.path.splitext(img_file)[0] + "_masked-plot.tif"
     plot_mask(im_min, masked_im[0], masks, save_path=outfile)
-    # Create a temporary directory with a unique name within the temp dir
-    #tmp_tmp_dir = os.path.join(tmp_dir, base_fname + '_' + str(np.random.randint(1e18)))
-    #os.makedirs(tmp_tmp_dir, exist_ok=True)
-            
-    # Generate a unique filename for temporary storage
-    #tmp_fname = os.path.join(tmp_tmp_dir, 'memfile_tmp' + str(np.random.randint(1e18)) + '.tif')
             
     # Save the masked image to the temp file
     outfile = os.path.splitext(img_file)[0] + "_masked.tif"
@@ -181,7 +182,7 @@ def main(args):
     # Save the image as a tif file, if no masking
     if args.use_2d:
         logging.info("2D image, skipping masking")
-        outfile = os.path.splitext(img_file)[0] + "_no-masked.tif"
+        outfile = os.path.splitext(args.img_file)[0] + "_no-masked.tif"
         tifffile.imwrite(outfile, im)
         logging.info(f"No-masked image saved to {outfile}")
 

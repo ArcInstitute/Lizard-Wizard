@@ -35,6 +35,9 @@ nextflow run main.nf \
   -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)
 ```
 
+# Usage
+
+TODO
 
 # Resources
 

@@ -5,7 +5,7 @@ workflow INPUT_WF {
         ch_img = Channel.fromPath(file(params.input_dir) / "**.czi", checkIfExists: true)
     } else if (params.file_type == "moldev"){
         // Molecular Divices file type
-        ch_img = MOLDEV_CONCAT()
+        ch_img = MOLDEV_CONCAT().img.flatten()
     } else {
         // raise error if the file_type is not supported
         error "Unsupported file_type: '${params.file_type}'. Supported types are 'zeiss' and 'moldev'."
@@ -28,6 +28,9 @@ workflow INPUT_WF {
         }
     }
 
+    // create tuple of (base_name, image_path) for each image
+    ch_img = ch_img.map{ image_path -> tuple(image_path.baseName, image_path) }
+
     emit:
     ch_img
 }
@@ -36,7 +39,8 @@ process MOLDEV_CONCAT {
     label "process_low"
 
     output:
-    path "tiff_combined/*.tif"
+    path "tiff_combined/*.tif",    emit: img
+    path "moldev_img_concat.log",  emit: log
 
     script:
     def test_image_nums = params.test_image_nums == null ? "" : "--test-image-nums ${params.test_image_nums}"
@@ -44,6 +48,7 @@ process MOLDEV_CONCAT {
     """
     concatenate_moldev_files.py ${test_image_nums} ${test_image_count} \
       --threads $task.cpus \
-      --output-dir tiff_combined ${params.input_dir}
+      --output-dir tiff_combined ${params.input_dir} \
+      > moldev_img_concat.log 2>&1
     """
 }

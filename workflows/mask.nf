@@ -3,40 +3,35 @@ workflow MASK_WF {
     ch_img
 
     main:
-    //if(params.use_2d != true){
-
     // download cellpose models
     ch_models = DOWNLOAD_CELLPOSE_MODELS()
     // mask each image
     ch_img_mask = MASK(ch_img, ch_models.collect())
-        
-        
-        //ch_img_mask = MASK_WF.out.mask
-    /*
-    } else {
-        //ch_img_mask = ch_img
-        ch_img_mask = NO_MASK(ch_img)
-    }  
-    */
     
     emit:
-    mask = ch_img_mask.mask
+    mask = ch_img_mask.masked
 }
 
 process MASK {
     input:
-    path img
+    tuple val(img_basename), path(img_file)
     path "models/*"
 
     output:
-    tuple env(FRATE), path("*_masked.tif"),  emit: mask
-    path "*_masked-plot.tif",                emit: mask_plot
+    tuple env(FRATE), path("*masked.tif"),  emit: masked
+    path "*masked-plot.tif",                emit: masked_plot
+    path "*masks.tif",                      emit: masks
+    path "*minprojection.tif",              emit: minprojection
+    path "${img_basename}.log",             emit: log
 
     script:
     def use_2d = params.use_2d == true ? "--use-2d" : ""
     """
+    # set local models path
     export CELLPOSE_LOCAL_MODELS_PATH=models
-    mask.py --file-type ${params.file_type} ${use_2d} $img
+    # run cellpose
+    mask.py --file-type ${params.file_type} ${use_2d} ${img_file} > "${img_basename}.log" 2>&1
+    # source the FRATE env variable
     source frate.sh
     """
 }
@@ -47,7 +42,9 @@ process DOWNLOAD_CELLPOSE_MODELS {
 
     script:
     """
+    # set local models path
     export CELLPOSE_LOCAL_MODELS_PATH=models
+    # download cellpose models to the local path
     download_cellpose_models.py models
     """
 }

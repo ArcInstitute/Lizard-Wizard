@@ -12,8 +12,7 @@ workflow {
     MASK_WF(ch_img)
 
     // Run Caiman
-    CAIMAN_WF(MASK_WF.out.mask)
-
+    //CAIMAN_WF(MASK_WF.out.mask)
 }
 
 
