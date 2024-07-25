@@ -6,10 +6,12 @@ import os
 import re
 import logging
 import argparse
+import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
 ## 3rd party
 import numpy as np
 import tifffile
+
 
 # logging
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
@@ -137,6 +139,16 @@ def concatenate_images(base_name: str, files: list, output_dir: str) -> None:
     # Read metadata from the first image
     with tifffile.TiffFile(files[0]) as tif:
         metadata = tif.pages[0].tags
+
+    # Ensure ImageDescription is valid XML
+    image_description = metadata.get('ImageDescription', None)
+    if image_description:
+        try:
+            ET.fromstring(image_description.value)
+        except ET.ParseError:
+            logging.warning(f"Invalid XML in ImageDescription for file {files[0]}. Fixing it.")
+            image_description.value = "<MetaData></MetaData>"
+
     # Remove StripOffsets tag to avoid issues with saving
     metadata = {tag.name: tag.value for tag in metadata.values() if tag.name != 'StripOffsets'}
 

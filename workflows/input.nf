@@ -28,7 +28,7 @@ workflow INPUT_WF {
         }
     }
 
-    // create tuple of (base_name, image_path) for each image
+    // Create tuple of (base_name, image_path) for each image
     ch_img = ch_img.map{ image_path -> tuple(image_path.baseName, image_path) }
 
     emit:

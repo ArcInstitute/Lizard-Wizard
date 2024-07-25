@@ -38,7 +38,7 @@ nextflow run main.nf \
   -profile dev_zeiss_3d,conda \
   -process.executor slurm \
   -process.queue cpu_batch \
-  -executor.queueSize 300 \
+  -executor.queueSize 200 \
   -process.scratch /media/8TBNVME/multiomics/ \
   -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)
 ```

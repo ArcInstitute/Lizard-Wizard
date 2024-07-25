@@ -12,7 +12,7 @@ import numpy as np
 from cellpose import models, io
 ## source
 from load_czi import load_image_data_czi
-from load_tiff import load_image_data_moldev
+from load_tiff import load_image_data_moldev_concat
 
 # logging
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
@@ -142,6 +142,11 @@ def plot_mask(original_image, masked_image, mask, save_path=None):
     logging.info(f"Masked image plot saved to {save_path}")
 
 def format_masks(im, im_min, masks: np.ndarray, img_file: str):
+    """
+    Formats the masks to apply to each time slice of the image, and saves the masked image and the masks to tiff files.
+    Args:
+    """
+
      # Save the masks
     base_fname = os.path.splitext(os.path.basename(args.img_file))[0]
     tifffile.imwrite(f"{base_fname}_masks.tif", masks)
@@ -169,7 +174,7 @@ def main(args):
     # Load the image data
     if args.file_type.lower() == 'moldev':
         # Extract the image data for Molecular Devices
-        im, frate = load_image_data_moldev(args.img_file)
+        im, frate = load_image_data_moldev_concat(args.img_file)
     elif args.file_type.lower() == 'zeiss':
         # Extract the image data for Zeiss images
         im, frate = load_image_data_czi(args.img_file)
