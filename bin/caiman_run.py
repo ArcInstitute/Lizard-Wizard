@@ -13,8 +13,10 @@ import xml.etree.ElementTree as ET
 import caiman as cm
 from caiman.source_extraction import cnmf
 from caiman.utils.visualization import inspect_correlation_pnr, nb_inspect_correlation_pnr
+from caiman.utils.visualization import plot_contours, nb_view_patches, nb_plot_contour
 # source 
 from load_tiff import load_tiff_metadata, get_metadata_value, extract_exposure
+from caiman_plot_traces import plot_original_traces, plot_denoised_traces
 
 
 # logging
@@ -35,15 +37,15 @@ parser.add_argument('img_file', type=str,
                     help='Directory path containing the image files')
 parser.add_argument('--output-dir', type=str, default="caiman_output",
                     help='Output directory')
-parser.add_argument('-g', '--gSig', type=int, default=6,
+parser.add_argument('-g', '--gSig', type=float, default=6.0,
                     help='Size of the Gaussian filter')
 parser.add_argument('--rf', type=int, default=40,
                     help='Size of patches for the correlation image')
 parser.add_argument('--decay-time', type=float, default=0.5,
                     help='Average decay time of a transient')
-parser.add_argument('--tsub', type=int, default=2,
+parser.add_argument('--tsub', type=float, default=2.0,
                     help='Temporal subsampling factor')
-parser.add_argument('--ssub', type=int, default=2,
+parser.add_argument('--ssub', type=float, default=2.0,
                     help='Spatial subsampling factor')
 parser.add_argument('-p', '--processes', type=int, default=1,
                     help='Number of processes to use')
@@ -147,13 +149,15 @@ def plot_correlations(cn_filter, pnr, output_dir):
             
     # Save the plot of pnr and corr filter
     outfile = os.path.join(output_dir, 'histogram_pnr_cn_filter.png')
-    plt.savefig(outfile)
-    plt.close() 
+    plt.savefig(outfile, format='tiff')
+    #plt.close() 
     logging.info(f"Histogram of correlation and peak-to-noise ratio images saved to {outfile}")
     logging.getLogger('matplotlib').setLevel(logging.INFO)
 
-def run_caiman(im, frate: float, decay_time: float, gSig: int, rf: int, tsub: int, ssub: int, n_processes: int,  motion_correct=False):
-    """"
+def run_caiman(im, frate: float, decay_time: float, gSig: int, rf: int, 
+               tsub: int, ssub: int, n_processes: int,  motion_correct=False):
+    """
+    Run the CaImAn CNMF algorithm on the given image data.
     Args:
         im: numpy array of the image data
         frate: The imaging rate in frames per second
@@ -164,6 +168,8 @@ def run_caiman(im, frate: float, decay_time: float, gSig: int, rf: int, tsub: in
         ssub: spatial subsampling factor
         n_processes: number of processes to use
         motion_correct: flag for performing motion correction 
+    Returns:
+        cnm: The CNMF object containing the results of the CNMF algorithm
     """
     logging.info("Running Caiman...")
 
@@ -171,7 +177,7 @@ def run_caiman(im, frate: float, decay_time: float, gSig: int, rf: int, tsub: in
     p = 1                        # order of the autoregressive system
     K = None                     # upper bound on number of components per patch, in general None
     Ain = None                   # possibility to seed with predetermined binary masks
-    gSiz = 4 * gSig + 1            # average diameter of a neuron, in general 4*gSig+1
+    gSiz = 4 * gSig + 1          # average diameter of a neuron, in general 4*gSig+1
     stride_cnmf = gSiz + 5       # overlap between patches (pixels) keep >gSiz
     merge_thresh = .7            # merging threshold, max correlation allowed
     low_rank_background = None   # None leaves background of each patch intact
@@ -193,8 +199,8 @@ def run_caiman(im, frate: float, decay_time: float, gSig: int, rf: int, tsub: in
         gSig=(gSig, gSig),
         gSiz=(gSiz, gSiz),
         merge_thresh=merge_thresh,
-        p=p,
-        dview=cluster,
+        p = p,
+        dview = cluster,
         tsub = tsub,
         ssub = ssub,
         Ain = Ain,
@@ -217,8 +223,47 @@ def run_caiman(im, frate: float, decay_time: float, gSig: int, rf: int, tsub: in
     ) 
     # Fit the model to the data
     cnm.fit(im)
+    # set parameters for component evaluation
+    cnm.params.set('quality', {'min_SNR': min_SNR, 'rval_thr': r_values_min, 'use_cnn': False})
     return cnm
 
+def cnm_eval_estimates(cnm, Y, frate: float, base_fname: str, output_dir: str) -> None:
+    # Evaluate the components
+    cnm.estimates.evaluate_components(Y, cnm.params)
+    logging.info(f"Number of total components: {len(cnm.estimates.C)}")
+    logging.info(f"Number of accepted components: {len(cnm.estimates.idx_components)}")
+
+    # Get the index of accepted components
+    idx = cnm.estimates.idx_components
+            
+    # Save the indices of accepted components
+    np.save(os.path.join(output_dir, f"{base_fname}_cnm_idx.npy"), idx)
+
+    # Plot Original traces stacked on top of each other and the denoised traces
+    plot_original_traces(cnm.estimates, idx, cnm.estimates.YrA, frate)
+    plot_denoised_traces(cnm.estimates, idx, frate)
+
+def save_caiman_output(cnm, cn_filter, pnr, base_fname: str, output_dir: str) -> None:
+    # Save the spatial footprint of the neurons detected by CNMF
+    np.save(os.path.join(output_dir, f"{base_fname})_cnm_A.npy"), cnm.estimates.A.todense())
+            
+    # Save the temporal components (i.e., the calcium activity over time) of neurons detected by CNMF
+    np.save(os.path.join(output_dir, f"{base_fname}_cnm_C.npy"), cnm.estimates.C)
+            
+    # Deconvolved neural activity or spike estimates
+    # is array, each row=neuron and each column=time point.
+    np.save(os.path.join(output_dir, f"{base_fname}_cnm_S.npy"), cnm.estimates.S)
+            
+    # Save correlation and PNR images
+    np.save(os.path.join(output_dir, f"{base_fname}_cn_filter.npy"), cn_filter)
+    np.save(os.path.join(output_dir, f"{base_fname}_pnr_filter.npy"), pnr)
+    tifffile.imwrite(os.path.join(output_dir, f"{base_fname}_cn_filter.tif"), cn_filter)
+    tifffile.imwrite(os.path.join(output_dir, f"{base_fname}_pnr_filter.tif"), pnr)
+
+    # Save histograms  
+    #fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(12, 6))
+    #fig.savefig(os.path.join(output_dir, f"{base_fname}_corr_pnr_histograms.tif"), format="tiff")
+            
 def main(args):
     # Set logging level for CaImAn
     logging.getLogger("caiman.cluster").setLevel(logging.ERROR)
@@ -239,13 +284,14 @@ def main(args):
 
     # Set output
     os.makedirs(args.output_dir, exist_ok=True)
+    base_fname = os.path.basename(os.path.splitext(args.img_file)[0])
 
     # Compute correlation and peak-to-noise ratio images
     logging.info("Computing correlation and peak-to-noise ratio images...")
     cn_filter, pnr = cm.summary_images.correlation_pnr(Y, gSig=args.gSig, swap_dim=False)
 
     # Plot the correlation and peak-to-noise ratio images
-    plot_correlations(cn_filter, pnr, args.output_dir)
+    plot_correlations(cn_filter, pnr, base_fname, args.output_dir)
 
     # Run Caiman
     try:
@@ -262,6 +308,31 @@ def main(args):
     finally: 
         close_cluster()
 
+    # Check if any components were found
+    if cnm.estimates.C.shape[0] == 0:
+        logging.error(f"No components found in file {base_fname}")
+
+    # Post-caiman 
+    save_caiman_output(cnm, cn_filter, pnr, base_fname, args.output_dir)
+
+    # Set the estimates
+    cnm_eval_estimates(cnm, Y, frate, args.output_dir)
+    
+    # Visualize the patches
+    nb_view_patches(
+        Yr, 
+        cnm.estimates.A.tocsc(), 
+        cnm.estimates.C, 
+        cnm.estimates.b, 
+        cnm.estimates.f,
+        dims[0], 
+        dims[1], 
+        YrA=cnm.estimates.YrA, 
+        image_neurons=cn_filter,
+        denoised_color='red', 
+        thr=0.8, 
+        cmap='gray'
+    )
 
 if __name__ == '__main__':
     args = parser.parse_args()

@@ -23,6 +23,14 @@ nextflow run main.nf \
   -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)
 ```
 
+Molecular devices 2d:
+
+```bash
+nextflow run main.nf \
+  -profile dev_moldev_2d,vm,conda \
+  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)
+```
+
 ## Slurm runs
 
 ```bash
