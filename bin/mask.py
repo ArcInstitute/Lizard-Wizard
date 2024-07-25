@@ -9,7 +9,7 @@ import tifffile
 ## 3rd party
 import matplotlib.pyplot as plt
 import numpy as np
-from cellpose import models, io
+from cellpose import models, io, Cellpose
 ## source
 from load_czi import load_image_data_czi
 from load_tiff import load_image_data_moldev_concat
@@ -36,19 +36,18 @@ parser.add_argument('--use-2d', action='store_true',
                     help='2d, so no masking')
 
 # functions
-def segment_image(im_min, model, max_diameter):
+def segment_image(im_min: np.ndarray, model: Cellpose, max_diameter: int) -> tuple:
     """
     Segments the image using the provided model and adjusts the diameter if necessary.
     Switches to an alternate model if initial segmentation fails.
-
-    Parameters:
-    - im_min (numpy.ndarray): The minimum projection of the image series.
-    - model (Cellpose model): The initial Cellpose model to use for segmentation.
-    - max_diameter (int): The maximum allowable diameter for segmentation.
-
+    Args:
+        im_min: The minimum projection of the image series.
+        model: The initial Cellpose model to use for segmentation.
+        max_diameter: The maximum allowable diameter for segmentation.
     Returns:
-    - masks (numpy.ndarray): The segmentation masks.
-    - success (bool): Whether the segmentation was successful.
+        tuple containing:
+        - masks (numpy.ndarray): The segmentation masks.
+        - success (bool): Whether the segmentation was successful.
     """
     diameter = 300
     first_exceed = False
@@ -79,8 +78,15 @@ def segment_image(im_min, model, max_diameter):
     # return failed
     return None, False
 
-def mask_image(im, im_min, img_file) -> np.ndarray:
+def mask_image(im: np.ndarray, im_min: np.ndarray, img_file: str) -> np.ndarray:
     """
+    Masks the image using the Cellpose model.
+    Args:
+        im: The original image data.
+        im_min: The minimum projection of the image data.
+        img_file: The path to the image file.
+    Returns:
+        masks: The masks to apply to the image data.
     """
     logging.info("Masking image...")
 
@@ -105,19 +111,19 @@ def mask_image(im, im_min, img_file) -> np.ndarray:
     # Return the masks as a binary array
     return masks
 
-def plot_mask(original_image, masked_image, mask, save_path=None):
+def plot_mask(original_image: np.ndarray, masked_image: np.ndarray, mask: np.ndarray, save_path: str=None) -> None:
     """
     Plots the original projection image, the masked image, and the mask side by side, and saves the figure if a save path is provided.
-
-    Parameters:
-    - original_image (np.ndarray): The original min projection image.
-    - masked_image (np.ndarray): The masked image.
-    - mask (np.ndarray): The mask image.
-    - save_path (str, optional): The path where the figure should be saved. Default is None.
+    Args:
+        original_image: The original min projection image.
+        masked_image: The masked image.
+        mask: The mask image.
+        save_path: The path where the figure should be saved. Default is None.
     """
-    # change logging level
+    # Change logging level
     logging.getLogger().setLevel(logging.WARNING)
 
+    # Plot the original and masked images side by side
     fig, axes = plt.subplots(1, 3, figsize=(18, 6))
     
     axes[0].imshow(original_image, cmap='gray')
@@ -137,17 +143,20 @@ def plot_mask(original_image, masked_image, mask, save_path=None):
         fig.savefig(save_path, format='tiff')
     plt.show()
 
-    # status
+    # Status
     logging.getLogger().setLevel(logging.INFO)
     logging.info(f"Masked image plot saved to {save_path}")
 
-def format_masks(im, im_min, masks: np.ndarray, img_file: str):
+def format_masks(im: np.ndarray, im_min: np.ndarray, masks: np.ndarray, img_file: str) -> None:
     """
     Formats the masks to apply to each time slice of the image, and saves the masked image and the masks to tiff files.
     Args:
+        im: The original image data.
+        im_min: The minimum projection of the image data.
+        masks: The masks to apply to the image data.
+        img_file: The path to the image file.
     """
-
-     # Save the masks
+    # Save the masks
     base_fname = os.path.splitext(os.path.basename(args.img_file))[0]
     tifffile.imwrite(f"{base_fname}_masks.tif", masks)
 
@@ -181,7 +190,7 @@ def main(args):
     else:
         raise ValueError(f"File type not recognized: {args.file_type}")
 
-    # Setting frate to environment variable for use in other scripts
+    # Set frate to environment variable for use in other scripts
     with open("frate.sh", "w") as outF:
         outF.write(f"export FRATE={frate}")
     # Save the image as a tif file, if no masking
