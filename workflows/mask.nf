@@ -21,9 +21,9 @@ process MASK {
 
     output:
     tuple env(FRATE), path("*masked.tif"),  emit: masked
-    path "*masked-plot.tif",                emit: masked_plot
-    path "*masks.tif",                      emit: masks
-    path "*minprojection.tif",              emit: minprojection
+    path "*masked-plot.tif",                emit: masked_plot, optional: true
+    path "*masks.tif",                      emit: masks, optional: true
+    path "*minprojection.tif",              emit: minprojection, optional: true
     //path "${img_basename}.log",             emit: log   // > "${img_basename}.log" 2>&1
 
     script:

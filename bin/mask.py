@@ -9,7 +9,7 @@ import tifffile
 ## 3rd party
 import matplotlib.pyplot as plt
 import numpy as np
-from cellpose import models, io, Cellpose
+from cellpose import models, io
 ## source
 from load_czi import load_image_data_czi
 from load_tiff import load_image_data_moldev_concat
@@ -36,7 +36,7 @@ parser.add_argument('--use-2d', action='store_true',
                     help='2d, so no masking')
 
 # functions
-def segment_image(im_min: np.ndarray, model: Cellpose, max_diameter: int) -> tuple:
+def segment_image(im_min: np.ndarray, model: models.Cellpose, max_diameter: int) -> tuple:
     """
     Segments the image using the provided model and adjusts the diameter if necessary.
     Switches to an alternate model if initial segmentation fails.
@@ -193,12 +193,14 @@ def main(args):
     # Set frate to environment variable for use in other scripts
     with open("frate.sh", "w") as outF:
         outF.write(f"export FRATE={frate}")
+    
     # Save the image as a tif file, if no masking
     if args.use_2d:
         logging.info("2D image, skipping masking")
         outfile = os.path.splitext(args.img_file)[0] + "_no-masked.tif"
         tifffile.imwrite(outfile, im)
         logging.info(f"No-masked image saved to {outfile}")
+        exit(0)
 
     # Squeeze the image
     im_min = np.squeeze(np.min(im, axis=1))
