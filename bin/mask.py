@@ -111,13 +111,16 @@ def mask_image(im: np.ndarray, im_min: np.ndarray, img_file: str) -> np.ndarray:
     # Return the masks as a binary array
     return masks
 
-def plot_mask(original_image: np.ndarray, masked_image: np.ndarray, mask: np.ndarray, save_path: str=None) -> None:
+def plot_mask(original_image: np.ndarray, masked_image: np.ndarray, mask: np.ndarray, 
+              file_type: str, save_path: str=None) -> None:
     """
-    Plots the original projection image, the masked image, and the mask side by side, and saves the figure if a save path is provided.
+    Plots the original projection image, the masked image, and the mask side by side,
+    and saves the figure if a save path is provided.
     Args:
         original_image: The original min projection image.
         masked_image: The masked image.
         mask: The mask image.
+        file_type: The type of file being processed.
         save_path: The path where the figure should be saved. Default is None.
     """
     # Change logging level
@@ -125,6 +128,11 @@ def plot_mask(original_image: np.ndarray, masked_image: np.ndarray, mask: np.nda
 
     # Plot the original and masked images side by side
     fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+
+    if file_type == 'zeiss':
+        axes[1].imshow(np.squeeze(np.max(masked_image, axis=0)), cmap='gray')
+    else:
+        axes[1].imshow(masked_image, cmap='gray')
     
     axes[0].imshow(original_image, cmap='gray')
     axes[0].set_title('Original Projection Image')
@@ -147,7 +155,8 @@ def plot_mask(original_image: np.ndarray, masked_image: np.ndarray, mask: np.nda
     logging.getLogger().setLevel(logging.INFO)
     logging.info(f"Masked image plot saved to {save_path}")
 
-def format_masks(im: np.ndarray, im_min: np.ndarray, masks: np.ndarray, img_file: str) -> None:
+def format_masks(im: np.ndarray, im_min: np.ndarray, masks: np.ndarray, 
+                 img_file: str, file_type: str) -> None:
     """
     Formats the masks to apply to each time slice of the image, and saves the masked image and the masks to tiff files.
     Args:
@@ -155,6 +164,7 @@ def format_masks(im: np.ndarray, im_min: np.ndarray, masks: np.ndarray, img_file
         im_min: The minimum projection of the image data.
         masks: The masks to apply to the image data.
         img_file: The path to the image file.
+        file_type: The type of file being processed.
     """
     # Save the masks
     base_fname = os.path.splitext(os.path.basename(args.img_file))[0]
@@ -172,7 +182,7 @@ def format_masks(im: np.ndarray, im_min: np.ndarray, masks: np.ndarray, img_file
 
     # Plot the original and masked images side by side
     outfile = os.path.splitext(img_file)[0] + "_masked-plot.tif"
-    plot_mask(im_min, masked_im[0], masks, save_path=outfile)
+    plot_mask(im_min, masked_im[0], masks, file_type=file_type, save_path=outfile)
             
     # Save the masked image to the temp file
     outfile = os.path.splitext(img_file)[0] + "_masked.tif"
@@ -203,13 +213,14 @@ def main(args):
         exit(0)
 
     # Squeeze the image
-    im_min = np.squeeze(np.min(im, axis=1))
+    axis = 0 if args.file_type.lower() == 'moldev' else 1
+    im_min = np.squeeze(np.min(im, axis=axis))
 
     # Mask the image
     masks = mask_image(im, im_min, args.img_file)
 
     # Format the masks
-    format_masks(im, im_min, masks, args.img_file)
+    format_masks(im, im_min, masks, args.img_file, args.file_type)
     
 ## script main
 if __name__ == '__main__':
