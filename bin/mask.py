@@ -78,13 +78,14 @@ def segment_image(im_min: np.ndarray, model: models.Cellpose, max_diameter: int)
     # return failed
     return None, False
 
-def mask_image(im: np.ndarray, im_min: np.ndarray, img_file: str) -> np.ndarray:
+def mask_image(im: np.ndarray, im_min: np.ndarray, img_file: str, file_type: str) -> np.ndarray:
     """
     Masks the image using the Cellpose model.
     Args:
         im: The original image data.
         im_min: The minimum projection of the image data.
         img_file: The path to the image file.
+        file_type: The type of file being processed.
     Returns:
         masks: The masks to apply to the image data.
     """
@@ -94,7 +95,8 @@ def mask_image(im: np.ndarray, im_min: np.ndarray, img_file: str) -> np.ndarray:
     model = models.Cellpose(gpu=False, model_type='nuclei')
             
     # Grab the min projection of the image series
-    im_min = np.squeeze(np.min(im, axis=1))
+    axis = 0 if args.file_type.lower() == 'moldev' else 1
+    im_min = np.squeeze(np.min(im, axis=axis))
     max_diameter = im_min.shape[0]
             
     # Perform segmentation
@@ -217,7 +219,7 @@ def main(args):
     im_min = np.squeeze(np.min(im, axis=axis))
 
     # Mask the image
-    masks = mask_image(im, im_min, args.img_file)
+    masks = mask_image(im, im_min, args.img_file, args.file_type)
 
     # Format the masks
     format_masks(im, im_min, masks, args.img_file, args.file_type)
