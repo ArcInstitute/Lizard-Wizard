@@ -24,7 +24,7 @@ class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter,
 
 desc = "Mask image"
 epi = """DESCRIPTION:
-   
+Mask the image using the Cellpose model.
 """
 parser = argparse.ArgumentParser(description=desc, epilog=epi,
                                  formatter_class=CustomFormatter)
@@ -95,8 +95,14 @@ def mask_image(im: np.ndarray, im_min: np.ndarray, img_file: str, file_type: str
     model = models.Cellpose(gpu=False, model_type='nuclei')
             
     # Grab the min projection of the image series
-    axis = 0 if args.file_type.lower() == 'moldev' else 1
-    im_min = np.squeeze(np.min(im, axis=axis))
+    #axis = 0 if args.file_type.lower() == 'moldev' else 1
+    #im_min = np.squeeze(np.min(im, axis=axis))
+    if args.file_type.lower() == 'moldev':
+        im_min = np.min(im, axis=0)
+    else:
+        im_min = np.squeeze(np.min(im, axis=1))
+
+    # Set the maximum diameter for segmentation
     max_diameter = im_min.shape[0]
             
     # Perform segmentation
@@ -140,7 +146,6 @@ def plot_mask(original_image: np.ndarray, masked_image: np.ndarray, mask: np.nda
     axes[0].set_title('Original Projection Image')
     axes[0].axis('off')
 
-    axes[1].imshow(np.squeeze(np.max(masked_image, axis=0)), cmap='gray')
     axes[1].set_title('Masked Image')
     axes[1].axis('off')
 
@@ -215,8 +220,12 @@ def main(args):
         exit(0)
 
     # Squeeze the image
-    axis = 0 if args.file_type.lower() == 'moldev' else 1
-    im_min = np.squeeze(np.min(im, axis=axis))
+    #axis = 0 if args.file_type.lower() == 'moldev' else 1    
+    #im_min = np.squeeze(np.min(im, axis=axis))
+    if args.file_type.lower() == 'moldev':
+        im_min = np.min(im, axis=0)
+    else:
+        im_min = np.squeeze(np.min(im, axis=1))
 
     # Mask the image
     masks = mask_image(im, im_min, args.img_file, args.file_type)
