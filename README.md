@@ -45,9 +45,42 @@ nextflow run main.nf \
   -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)
 ```
 
+# Installation
+
+## Nextflow install
+
+It is easiest to install Nextflow using `mamba` (or `conda`):
+
+```bash
+mamba install -n nextflow_env -c bioconda nextflow
+```
+
+## Pipeline conda environments 
+
+The pipeline uses conda environment to manage dependencies. 
+Nextflow will automatically create the environments as long as `conda` is installed.
+
+## Parameters 
+
+See `nextflow.config` for the parameters that can be set.
+
+## Run
+
+```bash
+nextflow run main.nf \
+  -profile conda,slurm \
+  -process.scratch /media/8TBNVME/multiomics/ \
+  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)
+  --input 
+```
+
+> If you are not in the `multiomics` user group (check by running the `groups` command), 
+> you will need to change the `scratch` and `work-dir` paths.
+
+
 # Usage
 
-TODO
+**TODO**
 
 # Resources
 
