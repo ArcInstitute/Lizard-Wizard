@@ -37,7 +37,7 @@ parser.add_argument('img_file', type=str,
                     help='Directory path containing the image files')
 parser.add_argument('--output-dir', type=str, default="caiman_output",
                     help='Output directory')
-parser.add_argument('-g', '--gSig', type=float, default=6.0,
+parser.add_argument('-g', '--gSig', type=int, default=6,
                     help='Size of the Gaussian filter')
 parser.add_argument('--rf', type=int, default=40,
                     help='Size of patches for the correlation image')
@@ -49,6 +49,8 @@ parser.add_argument('--ssub', type=float, default=2.0,
                     help='Spatial subsampling factor')
 parser.add_argument('-p', '--processes', type=int, default=1,
                     help='Number of processes to use')
+parser.add_argument('--motion-correct', action='store_true', default=False,
+                    help = 'Perform motion correction')
 
 # functions
 def setup_cluster(processes: int=1) -> int:
@@ -189,6 +191,9 @@ def run_caiman(im, frate: float, decay_time: float, gSig: int, rf: int,
         cnm: The CNMF object containing the results of the CNMF algorithm
     """
     logging.info("Running Caiman...")
+    
+    # Set logging level for CaImAn
+    logging.getLogger("caiman").setLevel(logging.ERROR)
 
     # Set various parameters for the CaImAn execution             
     p = 1                        # order of the autoregressive system
@@ -211,7 +216,7 @@ def run_caiman(im, frate: float, decay_time: float, gSig: int, rf: int,
     # Initialize the CNMF model with the specified parameters
     cnm = cnmf.CNMF(
         n_processes=n_processes,
-        method_init='corr_pnr',              # use this for 1 photon        
+        method_init="corr_pnr",              # use this for 1 photon        
         k=K,
         gSig=(gSig, gSig),
         gSiz=(gSiz, gSiz),
@@ -241,7 +246,7 @@ def run_caiman(im, frate: float, decay_time: float, gSig: int, rf: int,
     # Fit the model to the data
     cnm.fit(im)
     # set parameters for component evaluation
-    cnm.params.set('quality', {'min_SNR': min_SNR, 'rval_thr': r_values_min, 'use_cnn': False})
+    cnm.params.set("quality", {"min_SNR": min_SNR, "rval_thr": r_values_min, "use_cnn": False})
     return cnm
 
 def cnm_eval_estimates(cnm, Y, frate: float, base_fname: str, output_dir: str) -> None:
@@ -291,9 +296,6 @@ def save_caiman_output(cnm, cn_filter, pnr, base_fname: str, output_dir: str) ->
     tifffile.imwrite(os.path.join(output_dir, f"{base_fname}_pnr_filter.tif"), pnr)
             
 def main(args):
-    # Set logging level for CaImAn
-    logging.getLogger("caiman.cluster").setLevel(logging.ERROR)
-
     # get the frame rate
     frate = os.environ["FRATE"]
     logging.info(f"Frame rate set to: {frate}")
@@ -329,7 +331,8 @@ def main(args):
             rf=args.rf,
             tsub=args.tsub,
             ssub=args.ssub,
-            n_processes=n_processes
+            n_processes=n_processes,
+            motion_correct=args.motion_correct
         )
     finally: 
         # Regardless of whether the CNMF algorithm runs successfully or not, close the cluster

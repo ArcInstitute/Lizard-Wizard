@@ -21,4 +21,4 @@ dependencies:
   - pip:
     - glob2
     - pprintpp
-    - git+https://github.com/flatironinstitute/CaImAn.git
+    - git+https://github.com/flatironinstitute/CaImAn.git@dev

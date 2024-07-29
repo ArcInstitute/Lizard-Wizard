@@ -5,6 +5,7 @@
 tmp/
 logs/
 work/
+archive/
 .nextflow/
 .nextflow*
 screenlog.*
