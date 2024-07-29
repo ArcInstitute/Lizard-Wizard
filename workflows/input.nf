@@ -36,6 +36,7 @@ workflow INPUT_WF {
 }
 
 process MOLDEV_CONCAT {
+    conda "envs/cellpose.yml"
     label "process_low"
 
     output:

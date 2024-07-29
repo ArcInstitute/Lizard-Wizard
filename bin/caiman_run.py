@@ -5,11 +5,11 @@ from __future__ import print_function
 import os
 import logging
 import argparse
+import xml.etree.ElementTree as ET
 ## 3rd party
 import numpy as np
 import matplotlib.pyplot as plt
 import tifffile
-import xml.etree.ElementTree as ET
 import caiman as cm
 from caiman.source_extraction import cnmf
 from caiman.utils.visualization import inspect_correlation_pnr, nb_inspect_correlation_pnr
@@ -272,9 +272,12 @@ def cnm_eval_estimates(cnm, Y, frate: float, base_fname: str, output_dir: str) -
     # Save the indices of accepted components
     np.save(os.path.join(output_dir, f"{base_fname}_cnm_idx.npy"), idx)
 
-    # Plot Original traces stacked on top of each other and the denoised traces
-    plot_original_traces(cnm.estimates, idx, cnm.estimates.YrA, frate)
-    plot_denoised_traces(cnm.estimates, idx, frate)
+    # Plot original traces stacked on top of each other and the denoised traces
+    if len(cnm.estimates.C) > 0:
+        plot_original_traces(cnm.estimates, idx, cnm.estimates.YrA, frate)
+        plot_denoised_traces(cnm.estimates, idx, frate)
+    else:
+        logging.warning("No components found to plot traces")
 
 def save_caiman_output(cnm, cn_filter, pnr, base_fname: str, output_dir: str) -> None:
     """
@@ -358,21 +361,24 @@ def main(args):
     cnm_eval_estimates(cnm, Y, frate, base_fname, args.output_dir)
     
     # Visualize the patches
-    logging.info("Visualizing patches...")
-    nb_view_patches(
-        Yr, 
-        cnm.estimates.A.tocsc(), 
-        cnm.estimates.C, 
-        cnm.estimates.b, 
-        cnm.estimates.f,
-        dims[0], 
-        dims[1], 
-        YrA=cnm.estimates.YrA, 
-        image_neurons=cn_filter,
-        denoised_color="red", 
-        thr=0.8, 
-        cmap="gray"
-    )
+    if len(cnm.estimates.C) > 0:
+        logging.info("Visualizing patches...")
+        nb_view_patches(
+            Yr, 
+            cnm.estimates.A.tocsc(), 
+            cnm.estimates.C, 
+            cnm.estimates.b, 
+            cnm.estimates.f,
+            dims[0], 
+            dims[1], 
+            YrA=cnm.estimates.YrA, 
+            image_neurons=cn_filter,
+            denoised_color="red", 
+            thr=0.8, 
+            cmap="gray"
+        )
+    else:
+        logging.warning("No components found to visualize patches")
 
 if __name__ == "__main__":
     args = parser.parse_args()
