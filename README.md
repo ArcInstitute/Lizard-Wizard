@@ -33,6 +33,10 @@ nextflow run main.nf \
   -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)
 ```
 
+## TODO
+
+[ ] Update Caiman (stop using github release)
+
 ## Slurm runs
 
 ```bash
@@ -134,3 +138,4 @@ nextflow run main.nf \
 * Molecular devices - 3d
   * NAS
     * `/Volumes/ARC-DATA/LabDevices/220-4-ML/MD ImageXpress/CMTC/Sneha/Calcium_AAV-GCAMP_6wk_20240416`
+

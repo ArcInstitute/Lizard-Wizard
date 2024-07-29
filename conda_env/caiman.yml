@@ -14,7 +14,6 @@ dependencies:
   - psutil
   - scikit-image
   - tifffile
-  - caiman
   - aicspylibczi
   - xmltodict
   - tqdm
@@ -22,3 +21,4 @@ dependencies:
   - pip:
     - glob2
     - pprintpp
+    - git+https://github.com/flatironinstitute/CaImAn.git

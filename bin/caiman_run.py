@@ -29,7 +29,7 @@ class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter,
 
 desc = "Run Caiman on image"
 epi = """DESCRIPTION:
-   
+Run Caiman on a single image file. 
 """
 parser = argparse.ArgumentParser(description=desc, epilog=epi,
                                  formatter_class=CustomFormatter)
@@ -90,8 +90,8 @@ def setup_cluster(processes: int=1) -> int:
         )
         logging.info(f"  Successfully set up a new cluster with {n_processes} processes")
     except Exception as e:
-        logging.warning(f"Error during cluster setup: {str(e)}")
-    # Return the cluster and the number of processes
+        logging.warning(f"  Error during cluster setup: {str(e)}")
+    # Return the number of processes
     return n_processes
 
 def close_cluster():
@@ -109,15 +109,20 @@ def close_cluster():
             cm.stop_server(dview=cluster)
             logging.info("  Cluster closed successfully.")
         except Exception as e:
-            logging.warning(f"Failed to close the cluster: {str(e)}")
+            logging.warning(f"  Failed to close the cluster: {str(e)}")
         finally:
             cluster = None
     else:
         logging.info("No cluster to close.")
 
-def plot_correlations(cn_filter, pnr, output_dir):
+def plot_correlations(cn_filter, pnr, output_dir: str) -> None:
     """
     Plots the correlation and peak-to-noise ratio images side by side.
+
+    Args:
+        cn_filter: The correlation image data
+        pnr: The peak-to-noise ratio image data
+        output_dir: The output directory to save the plots
     """
     logging.info("Plotting correlation and peak-to-noise ratio images...")
     logging.getLogger('matplotlib').setLevel(logging.WARNING)
@@ -134,14 +139,26 @@ def plot_correlations(cn_filter, pnr, output_dir):
     fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(12, 6))
             
     # Histogram for cn_filter
-    counts1, bins1, patches1 = axes[0].hist(np.concatenate(cn_filter), bins=30, orientation='horizontal', color='blue', edgecolor='black')
+    counts1, bins1, patches1 = axes[0].hist(
+        np.concatenate(cn_filter), 
+        bins=30, 
+        orientation='horizontal', 
+        color='blue', 
+        edgecolor='black'
+    )
     axes[0].invert_xaxis()
     axes[0].set_title('Histogram of CN Filter')
     axes[0].set_xlabel('Count')
     axes[0].set_ylabel('Correlation Value')
             
     # Histogram for pnr
-    counts2, bins2, patches2 = axes[1].hist(np.concatenate(pnr), bins=30, orientation='horizontal', color='green', edgecolor='black')
+    counts2, bins2, patches2 = axes[1].hist(
+        np.concatenate(pnr), 
+        bins=30, 
+        orientation='horizontal', 
+        color='green', 
+        edgecolor='black'
+    )
     axes[1].invert_xaxis()
     axes[1].set_title('Histogram of pnr')
     axes[1].set_xlabel('Count')
@@ -228,6 +245,8 @@ def run_caiman(im, frate: float, decay_time: float, gSig: int, rf: int,
     return cnm
 
 def cnm_eval_estimates(cnm, Y, frate: float, base_fname: str, output_dir: str) -> None:
+    logging.info("Evaluating CNMF estimates...")
+
     # Evaluate the components
     cnm.estimates.evaluate_components(Y, cnm.params)
     logging.info(f"Number of total components: {len(cnm.estimates.C)}")
@@ -244,6 +263,17 @@ def cnm_eval_estimates(cnm, Y, frate: float, base_fname: str, output_dir: str) -
     plot_denoised_traces(cnm.estimates, idx, frate)
 
 def save_caiman_output(cnm, cn_filter, pnr, base_fname: str, output_dir: str) -> None:
+    """
+    Save the output of the CNMF algorithm to the specified output directory.
+    Args:
+        cnm: The CNMF object containing the results of the CNMF algorithm
+        cn_filter: The correlation image data
+        pnr: The peak-to-noise ratio image data
+        base_fname: The base filename of the input image
+        output_dir: The output directory to save the CNMF output
+    """
+    logging.info("Saving CNMF output...")
+
     # Save the spatial footprint of the neurons detected by CNMF
     np.save(os.path.join(output_dir, f"{base_fname})_cnm_A.npy"), cnm.estimates.A.todense())
             
@@ -259,10 +289,6 @@ def save_caiman_output(cnm, cn_filter, pnr, base_fname: str, output_dir: str) ->
     np.save(os.path.join(output_dir, f"{base_fname}_pnr_filter.npy"), pnr)
     tifffile.imwrite(os.path.join(output_dir, f"{base_fname}_cn_filter.tif"), cn_filter)
     tifffile.imwrite(os.path.join(output_dir, f"{base_fname}_pnr_filter.tif"), pnr)
-
-    # Save histograms  
-    #fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(12, 6))
-    #fig.savefig(os.path.join(output_dir, f"{base_fname}_corr_pnr_histograms.tif"), format="tiff")
             
 def main(args):
     # Set logging level for CaImAn
@@ -273,11 +299,11 @@ def main(args):
     logging.info(f"Frame rate set to: {frate}")
 
     # Create a memory-mapped file using CaImAn from the temp file
-    fname_new = cm.save_memmap([args.img_file], base_name='memmap_', order='C')
+    fname_new = cm.save_memmap([args.img_file], base_name="memmap_", order="C")
   
     # Load the memory-mapped file
     Yr, dims, T = cm.load_memmap(fname_new)
-    Y = Yr.T.reshape((T,) + dims, order='F')
+    Y = Yr.T.reshape((T,) + dims, order="F")
 
     # Set up the cluster
     n_processes = setup_cluster(args.processes)
@@ -291,7 +317,7 @@ def main(args):
     cn_filter, pnr = cm.summary_images.correlation_pnr(Y, gSig=args.gSig, swap_dim=False)
 
     # Plot the correlation and peak-to-noise ratio images
-    plot_correlations(cn_filter, pnr, base_fname, args.output_dir)
+    plot_correlations(cn_filter, pnr, args.output_dir)
 
     # Run Caiman
     try:
@@ -306,19 +332,21 @@ def main(args):
             n_processes=n_processes
         )
     finally: 
+        # Regardless of whether the CNMF algorithm runs successfully or not, close the cluster
         close_cluster()
 
     # Check if any components were found
     if cnm.estimates.C.shape[0] == 0:
         logging.error(f"No components found in file {base_fname}")
 
-    # Post-caiman 
+    # Save the output  
     save_caiman_output(cnm, cn_filter, pnr, base_fname, args.output_dir)
 
     # Set the estimates
     cnm_eval_estimates(cnm, Y, frate, args.output_dir)
     
     # Visualize the patches
+    logging.info("Visualizing patches...")
     nb_view_patches(
         Yr, 
         cnm.estimates.A.tocsc(), 
@@ -329,11 +357,11 @@ def main(args):
         dims[1], 
         YrA=cnm.estimates.YrA, 
         image_neurons=cn_filter,
-        denoised_color='red', 
+        denoised_color="red", 
         thr=0.8, 
-        cmap='gray'
+        cmap="gray"
     )
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = parser.parse_args()
     main(args)

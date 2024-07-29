@@ -24,7 +24,7 @@ process MASK {
     path "*masked-plot.tif",                emit: masked_plot, optional: true
     path "*masks.tif",                      emit: masks, optional: true
     path "*minprojection.tif",              emit: minprojection, optional: true
-    //path "${img_basename}.log",             emit: log   // > "${img_basename}.log" 2>&1
+    path "${img_basename}.log",             emit: log  
 
     script:
     def use_2d = params.use_2d == true ? "--use-2d" : ""
@@ -32,7 +32,7 @@ process MASK {
     # set local models path
     export CELLPOSE_LOCAL_MODELS_PATH=models
     # run cellpose
-    mask.py --file-type ${params.file_type} ${use_2d} ${img_file} 
+    mask.py --file-type ${params.file_type} ${use_2d} ${img_file} > "${img_basename}.log" 2>&1
     # source the FRATE env variable
     source frate.sh
     """
