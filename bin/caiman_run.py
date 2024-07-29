@@ -43,9 +43,9 @@ parser.add_argument('--rf', type=int, default=40,
                     help='Size of patches for the correlation image')
 parser.add_argument('--decay-time', type=float, default=0.5,
                     help='Average decay time of a transient')
-parser.add_argument('--tsub', type=float, default=2.0,
+parser.add_argument('--tsub', type=int, default=2,
                     help='Temporal subsampling factor')
-parser.add_argument('--ssub', type=float, default=2.0,
+parser.add_argument('--ssub', type=int, default=2,
                     help='Spatial subsampling factor')
 parser.add_argument('-p', '--processes', type=int, default=1,
                     help='Number of processes to use')
@@ -250,6 +250,15 @@ def run_caiman(im, frate: float, decay_time: float, gSig: int, rf: int,
     return cnm
 
 def cnm_eval_estimates(cnm, Y, frate: float, base_fname: str, output_dir: str) -> None:
+    """
+    Evaluate the CNMF estimates and save the results to the specified output directory.
+    Args:
+        cnm: The CNMF object containing the results of the CNMF algorithm
+        Y: The image data
+        frate: The imaging rate in frames per second
+        base_fname: The base filename of the input image
+        output_dir: The output directory to save the CNMF output
+    """
     logging.info("Evaluating CNMF estimates...")
 
     # Evaluate the components
@@ -346,7 +355,7 @@ def main(args):
     save_caiman_output(cnm, cn_filter, pnr, base_fname, args.output_dir)
 
     # Set the estimates
-    cnm_eval_estimates(cnm, Y, frate, args.output_dir)
+    cnm_eval_estimates(cnm, Y, frate, base_fname, args.output_dir)
     
     # Visualize the patches
     logging.info("Visualizing patches...")
