@@ -13,7 +13,7 @@ workflow MASK_WF {
 }
 
 process MASK {
-    publishDir file(params.output_dir) / "mask", mode: "copy", overwrite: true
+    publishDir file(params.output_dir) / "mask", mode: "copy", overwrite: true, saveAs: { file -> file.size() > 0 ? file : null }
     conda "envs/cellpose.yml"
     label "process_medium_mem"
 

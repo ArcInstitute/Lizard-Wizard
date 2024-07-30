@@ -173,13 +173,17 @@ def format_masks(im: np.ndarray, im_min: np.ndarray, masks: np.ndarray,
         img_file: The path to the image file.
         file_type: The type of file being processed.
     """
+    # Get the base file name
+    base_fname = os.path.splitext(os.path.basename(args.img_file))[0]
+
     # Check input
     if masks is None:
-        logging.warning("No masks to format. Exiting...")
+        logging.warning("No masks to format. Writing an empty masked file and exiting")
+        with open(base_fname + "_masked.tif", "w") as outF:
+            outF.write("")
         exit(0)
 
-    # Save the masks
-    base_fname = os.path.splitext(os.path.basename(args.img_file))[0]
+    # Write masks to tiff file
     tifffile.imwrite(f"{base_fname}_masks.tif", masks)
 
     # Ensure mask is binary and broadcast the mask to apply it to each time slice
