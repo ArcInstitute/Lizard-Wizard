@@ -65,7 +65,7 @@ def segment_image(im_min: np.ndarray, model: models.Cellpose, max_diameter: int)
             else:
                 if model == original_model:
                     logging.info("Switching to 'cyto3' model.")
-                    model = models.Cellpose(gpu=False, model_type='cyto3')
+                    model = models.Cellpose(gpu=False, model_type="cyto3")
                     diameter = 300
                     first_exceed = False
                 else:
@@ -87,17 +87,17 @@ def mask_image(im: np.ndarray, im_min: np.ndarray, img_file: str, file_type: str
         img_file: The path to the image file.
         file_type: The type of file being processed.
     Returns:
-        masks: The masks to apply to the image data.
+        masks: The masks to apply to the image data. Returns None if segmentation fails.
     """
     logging.info("Masking image...")
 
     # Import the cellpose model
-    model = models.Cellpose(gpu=False, model_type='nuclei')
+    model = models.Cellpose(gpu=False, model_type="nuclei")
             
     # Grab the min projection of the image series
     #axis = 0 if args.file_type.lower() == 'moldev' else 1
     #im_min = np.squeeze(np.min(im, axis=axis))
-    if args.file_type.lower() == 'moldev':
+    if args.file_type.lower() == "moldev":
         im_min = np.min(im, axis=0)
     else:
         im_min = np.squeeze(np.min(im, axis=1))
@@ -173,6 +173,11 @@ def format_masks(im: np.ndarray, im_min: np.ndarray, masks: np.ndarray,
         img_file: The path to the image file.
         file_type: The type of file being processed.
     """
+    # Check input
+    if masks is None:
+        logging.warning("No masks to format. Exiting...")
+        exit(0)
+
     # Save the masks
     base_fname = os.path.splitext(os.path.basename(args.img_file))[0]
     tifffile.imwrite(f"{base_fname}_masks.tif", masks)
@@ -220,9 +225,7 @@ def main(args):
         exit(0)
 
     # Squeeze the image
-    #axis = 0 if args.file_type.lower() == 'moldev' else 1    
-    #im_min = np.squeeze(np.min(im, axis=axis))
-    if args.file_type.lower() == 'moldev':
+    if args.file_type.lower() == "moldev":
         im_min = np.min(im, axis=0)
     else:
         im_min = np.squeeze(np.min(im, axis=1))

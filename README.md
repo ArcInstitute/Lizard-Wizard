@@ -7,6 +7,10 @@ Calcium imaging analysis Nextflow pipeline for the Arc Institute.
 
 # Dev
 
+## TODO
+
+[ ] Update Caiman (stop using github release)
+
 ## Local runs
 
 Zeiss 3d:
@@ -33,18 +37,11 @@ nextflow run main.nf \
   -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)
 ```
 
-## TODO
-
-[ ] Update Caiman (stop using github release)
-
 ## Slurm runs
 
 ```bash
 nextflow run main.nf \
-  -profile dev_zeiss_3d,conda \
-  -process.executor slurm \
-  -process.queue cpu_batch \
-  -executor.queueSize 200 \
+  -profile dev_zeiss_3d,conda,slurm \
   -process.scratch /media/8TBNVME/multiomics/ \
   -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)
 ```
