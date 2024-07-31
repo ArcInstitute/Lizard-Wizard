@@ -62,11 +62,21 @@ It is easiest to install Nextflow using `mamba`:
 mamba install -n nextflow_env -c bioconda nextflow
 ```
 
-## Pipeline conda environments 
+## Pipeline install
+
+```bash
+git clone https://github.com/ArcInstitute/Lizard-Wizard \
+  && cd Lizard-Wizard
+```
+
+### Pipeline conda environments 
 
 The pipeline uses conda environment to manage dependencies. 
 Nextflow will automatically create the environments as long as `mamba` is installed.
 **Note:** it can take a while to create the environments, even with `mamba`.
+
+
+# Usage
 
 ## Parameters 
 
@@ -85,10 +95,47 @@ nextflow run main.nf \
 > If you are not in the `multiomics` user group (check by running the `groups` command), 
 > you will need to change the `scratch` and `work-dir` paths.
 
+## Test runs
 
-# Usage
+### Local runs 
 
-**TODO**
+> `Local` will use the resources in your current session, instead of submitting jobs to the cluster.
+
+Zeiss 3d:
+
+```bash
+nextflow run main.nf \
+  -profile dev_zeiss_3d,vm,conda \
+  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)
+```
+
+Molecular devices 3d:
+
+```bash
+nextflow run main.nf \
+  -profile dev_moldev_3d,vm,conda \
+  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)
+```
+
+Molecular devices 2d:
+
+```bash
+nextflow run main.nf \
+  -profile dev_moldev_2d,vm,conda \
+  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)
+```
+
+## Slurm runs
+
+An example of processing Zeiss 3d images on the cluster:
+
+```bash
+nextflow run main.nf \
+  -profile dev_zeiss_3d,conda,slurm \
+  -process.scratch /media/8TBNVME/multiomics/ \
+  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)
+```
+
 
 # Resources
 
