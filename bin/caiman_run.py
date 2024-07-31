@@ -386,7 +386,7 @@ def main(args):
     # Visualize the patches
     if len(cnm.estimates.C) > 0:
         logging.info("Visualizing patches...")
-        outfile = os.path.join(args.output_dir, base_fname + "_patches.html")
+        outfile = os.path.join(args.output_dir, base_fname + "_cmn-bokeh-traces.html")
         bokeh.io.output_file(outfile)
         nb_view_patches(
             Yr, 
@@ -394,7 +394,7 @@ def main(args):
             cnm.estimates.C, 
             cnm.estimates.b, 
             cnm.estimates.f,
-            dims[0], 
+            dims[0],
             dims[1],
             YrA=cnm.estimates.YrA, 
             image_neurons=cn_filter,
