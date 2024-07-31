@@ -11,6 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import tifffile
 import caiman as cm
+import bokeh
 from caiman.source_extraction import cnmf
 from caiman.utils.visualization import inspect_correlation_pnr, nb_inspect_correlation_pnr
 from caiman.utils.visualization import plot_contours, nb_view_patches, nb_plot_contour
@@ -49,8 +50,6 @@ parser.add_argument('--tsub', type=int, default=2,
                     help='Temporal subsampling factor')
 parser.add_argument('--ssub', type=int, default=2,
                     help='Spatial subsampling factor')
-#parser.add_argument('--use-2d', action='store_true',
-#                    help='2d, so no motion correction')
 parser.add_argument('--motion-correct', action='store_true', default=False,
                     help = 'Perform motion correction')
 parser.add_argument('-p', '--processes', type=int, default=1,
@@ -125,7 +124,6 @@ def close_cluster():
 def plot_correlations(cn_filter, pnr, output_dir: str) -> None:
     """
     Plots the correlation and peak-to-noise ratio images side by side.
-
     Args:
         cn_filter: The correlation image data
         pnr: The peak-to-noise ratio image data
@@ -388,6 +386,8 @@ def main(args):
     # Visualize the patches
     if len(cnm.estimates.C) > 0:
         logging.info("Visualizing patches...")
+        outfile = os.path.join(args.output_dir, base_fname + "_patches.html")
+        bokeh.io.output_file(outfile)
         nb_view_patches(
             Yr, 
             cnm.estimates.A.tocsc(), 
@@ -402,6 +402,8 @@ def main(args):
             thr=0.8, 
             cmap="gray"
         )
+        bokeh.io.reset_output()
+        logging.info(f"Output saved to {outfile}")
     else:
         logging.warning("No components found to visualize patches")
 
