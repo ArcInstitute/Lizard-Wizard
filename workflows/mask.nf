@@ -10,6 +10,7 @@ workflow MASK_WF {
     
     emit:
     mask = ch_img_mask.masked
+    img = ch_img_mask.img
 }
 
 def saveAsMask(file) {
@@ -27,6 +28,7 @@ process MASK {
 
     output:
     tuple path("frate.txt"), path("*masked.tif"), emit: masked
+    path img_file,                                emit: img
     path "*masked-plot.tif",                      emit: masked_plot, optional: true
     path "*masks.tif",                            emit: masks, optional: true
     path "*minprojection.tif",                    emit: minprojection, optional: true
