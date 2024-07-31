@@ -8,13 +8,17 @@ workflow CAIMAN_WF {
 
 }
 
+def saveAsCaiman(file){
+    return file.split("/").last()
+}
+
 process CAIMAN {
-    publishDir file(params.output_dir) / "caiman", mode: "copy", overwrite: true
+    publishDir file(params.output_dir) / "caiman", mode: "copy", overwrite: true, saveAs: { file -> saveAsCaiman(file) }
     conda "envs/caiman.yml"
     label "process_medium"
 
     input:
-    tuple env(FRATE), path(img)
+    tuple path(frate), path(img)
 
     output:
     path "caiman_output/*",     emit: output
@@ -29,7 +33,7 @@ process CAIMAN {
     cp $img \${CAIMAN_DATA}/temp/
 
     # run the caiman process
-    caiman_run.py -p $task.cpus $img > "${img_basename}.log" 2>&1
+    caiman_run.py -p $task.cpus $frate $img > "${img_basename}.log" 2>&1
     """
 }
 

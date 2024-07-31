@@ -12,8 +12,12 @@ workflow MASK_WF {
     mask = ch_img_mask.masked
 }
 
+def saveAsMask(file) {
+    (file.size() > 0 && !file.endsWith('.txt')) ? file : null
+}
+
 process MASK {
-    publishDir file(params.output_dir) / "mask", mode: "copy", overwrite: true, saveAs: { file -> file.size() > 0 ? file : null }
+    publishDir file(params.output_dir) / "mask", mode: "copy", overwrite: true, saveAs: { file -> saveAsMask(file) }
     conda "envs/cellpose.yml"
     label "process_medium_mem"
 
@@ -22,11 +26,11 @@ process MASK {
     path "models/*"
 
     output:
-    tuple env(FRATE), path("*masked.tif"),  emit: masked
-    path "*masked-plot.tif",                emit: masked_plot, optional: true
-    path "*masks.tif",                      emit: masks, optional: true
-    path "*minprojection.tif",              emit: minprojection, optional: true
-    path "${img_basename}.log",             emit: log  
+    tuple path("frate.txt"), path("*masked.tif"), emit: masked
+    path "*masked-plot.tif",                      emit: masked_plot, optional: true
+    path "*masks.tif",                            emit: masks, optional: true
+    path "*minprojection.tif",                    emit: minprojection, optional: true
+    path "${img_basename}.log",                   emit: log  
 
     script:
     def use_2d = params.use_2d == true ? "--use-2d" : ""
@@ -35,8 +39,6 @@ process MASK {
     export CELLPOSE_LOCAL_MODELS_PATH=models
     # run cellpose
     mask.py --file-type ${params.file_type} ${use_2d} ${img_file} > "${img_basename}.log" 2>&1
-    # source the FRATE env variable
-    source frate.sh
     """
 }
 

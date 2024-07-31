@@ -25,6 +25,7 @@ class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter,
 desc = "Mask image"
 epi = """DESCRIPTION:
 Mask the image using the Cellpose model.
+If masking fails, the unmasking image is outputted.
 """
 parser = argparse.ArgumentParser(description=desc, epilog=epi,
                                  formatter_class=CustomFormatter)
@@ -176,13 +177,6 @@ def format_masks(im: np.ndarray, im_min: np.ndarray, masks: np.ndarray,
     # Get the base file name
     base_fname = os.path.splitext(os.path.basename(args.img_file))[0]
 
-    # Check input
-    if masks is None:
-        logging.warning("No masks to format. Writing an empty masked file and exiting")
-        with open(base_fname + "_masked.tif", "w") as outF:
-            outF.write("")
-        exit(0)
-
     # Write masks to tiff file
     tifffile.imwrite(f"{base_fname}_masks.tif", masks)
 
@@ -206,6 +200,9 @@ def format_masks(im: np.ndarray, im_min: np.ndarray, masks: np.ndarray,
     logging.info(f"Masked image saved to {outfile}")
 
 def main(args):
+    # Set up the cellpose logger
+    logger = io.logger_setup()
+
     # Load the image data
     if args.file_type.lower() == 'moldev':
         # Extract the image data for Molecular Devices
@@ -216,9 +213,9 @@ def main(args):
     else:
         raise ValueError(f"File type not recognized: {args.file_type}")
 
-    # Set frate to environment variable for use in other scripts
-    with open("frate.sh", "w") as outF:
-        outF.write(f"export FRATE={frate}")
+    # Set write frate to a file
+    with open("frate.txt", "w") as outF:
+        outF.write(f"FRATE={frate}")
     
     # Save the image as a tif file, if no masking
     if args.use_2d:
@@ -236,6 +233,14 @@ def main(args):
 
     # Mask the image
     masks = mask_image(im, im_min, args.img_file, args.file_type)
+
+    # If segmentation/masking fails, write unmasked image
+    if masks is None:
+        logging.warning("Masking failed; writing the unmasked image")
+        outfile = os.path.splitext(args.img_file)[0] + "_no-masked.tif"
+        tifffile.imwrite(outfile, im)
+        logging.info(f"No-masked image saved to {outfile}")
+        exit(0)
 
     # Format the masks
     format_masks(im, im_min, masks, args.img_file, args.file_type)

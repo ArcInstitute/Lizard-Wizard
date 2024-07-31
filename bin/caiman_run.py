@@ -33,6 +33,8 @@ Run Caiman on a single image file.
 """
 parser = argparse.ArgumentParser(description=desc, epilog=epi,
                                  formatter_class=CustomFormatter)
+parser.add_argument('frate_file', type=str,
+                    help='File containing the frame rate')
 parser.add_argument('img_file', type=str,
                     help='Directory path containing the image files')
 parser.add_argument('--output-dir', type=str, default="caiman_output",
@@ -47,10 +49,13 @@ parser.add_argument('--tsub', type=int, default=2,
                     help='Temporal subsampling factor')
 parser.add_argument('--ssub', type=int, default=2,
                     help='Spatial subsampling factor')
-parser.add_argument('-p', '--processes', type=int, default=1,
-                    help='Number of processes to use')
+#parser.add_argument('--use-2d', action='store_true',
+#                    help='2d, so no motion correction')
 parser.add_argument('--motion-correct', action='store_true', default=False,
                     help = 'Perform motion correction')
+parser.add_argument('-p', '--processes', type=int, default=1,
+                    help='Number of processes to use')
+
 
 # functions
 def setup_cluster(processes: int=1) -> int:
@@ -292,7 +297,7 @@ def save_caiman_output(cnm, cn_filter, pnr, base_fname: str, output_dir: str) ->
     logging.info("Saving CNMF output...")
 
     # Save the spatial footprint of the neurons detected by CNMF
-    np.save(os.path.join(output_dir, f"{base_fname})_cnm_A.npy"), cnm.estimates.A.todense())
+    np.save(os.path.join(output_dir, f"{base_fname}_cnm_A.npy"), cnm.estimates.A.todense())
             
     # Save the temporal components (i.e., the calcium activity over time) of neurons detected by CNMF
     np.save(os.path.join(output_dir, f"{base_fname}_cnm_C.npy"), cnm.estimates.C)
@@ -307,9 +312,29 @@ def save_caiman_output(cnm, cn_filter, pnr, base_fname: str, output_dir: str) ->
     tifffile.imwrite(os.path.join(output_dir, f"{base_fname}_cn_filter.tif"), cn_filter)
     tifffile.imwrite(os.path.join(output_dir, f"{base_fname}_pnr_filter.tif"), pnr)
             
+def read_frate(infile: str) -> float:
+    """
+    Read in the frame rate from the specified file.
+    Expected format: `FRATE=<frame rate>`
+    Args:
+        infile: The file containing the frame rate
+    Returns:
+        frate: The frame rate
+    """
+    # Read the frame rate from the file
+    frate = None
+    with open(infile, 'r') as f:
+        line = f.readline().strip()
+        if line.startswith("FRATE="):
+            frate = float(line.split('=')[1])
+    # Check if the frame rate was read successfully
+    if frate is None:
+        raise ValueError(f"Could not read frame rate from file {infile}")
+    return frate
+
 def main(args):
     # get the frame rate
-    frate = os.environ["FRATE"]
+    frate = read_frate(args.frate_file)
     logging.info(f"Frame rate set to: {frate}")
 
     # Create a memory-mapped file using CaImAn from the temp file
@@ -370,7 +395,7 @@ def main(args):
             cnm.estimates.b, 
             cnm.estimates.f,
             dims[0], 
-            dims[1], 
+            dims[1],
             YrA=cnm.estimates.YrA, 
             image_neurons=cn_filter,
             denoised_color="red", 
