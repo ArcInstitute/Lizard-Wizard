@@ -22,9 +22,11 @@ workflow INPUT_WF {
             def test_image_nums = params.test_image_nums.split(",").collect{ it.toInteger() }
             // select indices from the list of images
             ch_img = ch_img.collect().map{ list -> test_image_nums.collect{ list[it] } }.flatten()
-        } else if (params.test_image_count > 0){
-            println "Selecting ${params.test_image_count} random test images"
-            ch_img = ch_img.randomSample(params.test_image_count)
+        } else if (params.test_image_count.toInteger() > 0){
+            // select random images
+            def image_str = params.test_image_count.toInteger() > 1 ? "images" : "image"
+            println "Selecting ${params.test_image_count} random test ${image_str}"
+            ch_img = ch_img.randomSample(params.test_image_count.toInteger())
         }
     }
 

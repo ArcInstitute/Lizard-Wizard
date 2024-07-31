@@ -48,9 +48,15 @@ nextflow run main.nf \
 
 # Installation
 
+## Conda & mamba install
+
+`mamba` is needed to run the pipeline. It is a faster version of `conda`. `mamba` can be installed via `conda`. 
+
+To install both, see the [conda/mamba Notion docs](https://www.notion.so/arcinstitute/Conda-Mamba-8106bed9553d46cca1af4e10f486bec2).
+
 ## Nextflow install
 
-It is easiest to install Nextflow using `mamba` (or `conda`):
+It is easiest to install Nextflow using `mamba`:
 
 ```bash
 mamba install -n nextflow_env -c bioconda nextflow
@@ -59,7 +65,8 @@ mamba install -n nextflow_env -c bioconda nextflow
 ## Pipeline conda environments 
 
 The pipeline uses conda environment to manage dependencies. 
-Nextflow will automatically create the environments as long as `conda` is installed.
+Nextflow will automatically create the environments as long as `mamba` is installed.
+**Note:** it can take a while to create the environments, even with `mamba`.
 
 ## Parameters 
 
