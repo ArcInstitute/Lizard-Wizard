@@ -2,6 +2,7 @@
 ## batteries
 import os
 import logging
+from typing import List, Tuple
 ## 3rd party
 import numpy as np
 import tifffile
@@ -10,21 +11,22 @@ from scipy import ndimage as ndi
 
 
 # functions
-def check_and_load_file(file_path: str):
+def check_and_load_file(file_path: str) -> np.ndarray:
     """
     Checks if a file exists and loads it based on its extension.
+    If "no-mask" file, return None.
     Args:
         file_path: Path to the file to be loaded.
     Returns:
         Loaded file content if successful, otherwise None.
     """
-    # Check if the file exists
-    if not os.path.exists(file_path):
-        logging.warning(f'File {file_path} does not exist.')
+    # if masked named "_no-mask.tif", then return None
+    if file_path.endswith('_no-mask.tif'):
+        logging.info("Mask file is 'no-mask', so not using")
         return None
 
     # Load the file based on its extension
-    print(f'Opening {os.path.basename(file_path)}')
+    logging.info(f"Opening {os.path.basename(file_path)}")
     try:
         # Determine the file type by extension and load accordingly
         if file_path.endswith('.npy'):
@@ -32,25 +34,23 @@ def check_and_load_file(file_path: str):
         elif file_path.endswith('.tif') or file_path.endswith('.tiff'):
             return tifffile.imread(file_path)
         else:
-            error_msg = f'Unsupported file type for file {os.path.basename(file_path)}'
+            error_msg = f"Unsupported file type for file {os.path.basename(file_path)}"
             logging.warning(error_msg)
     except Exception as e:
-        error_msg = f'Error opening file {os.path.basename(file_path)}: {e}'
+        error_msg = f"Error opening file {os.path.basename(file_path)}: {e}"
         logging.warning(error_msg)
     return None
    
 
-def convert_f_to_dff_perc(f_mat, perc, win_sz=500):
+def convert_f_to_dff_perc(f_mat: np.ndarray, perc: int, win_sz: int=500) -> np.ndarray:
     """
-    Converts fluorescence data to delta F/F using a percentile filter.
-    
-    Parameters:
-    f_mat (ndarray): Fluorescence data matrix with neurons as rows and time points as columns.
-    perc (int): Percentile value for the filter.
-    win_sz (int): Window size for the percentile filter.
-    
+    Convert fluorescence data to delta F/F using a percentile filter.
+    Args:
+        f_mat: Fluorescence data matrix with neurons as rows and time points as columns.
+        perc: Percentile value for the filter.
+        win_sz: Window size for the percentile filter.
     Returns:
-    dff_mat (ndarray): Delta F/F matrix.
+        dff_mat: Delta F/F matrix.
     """
     # Allocate array for baseline
     f_base = np.zeros_like(f_mat)
@@ -65,14 +65,14 @@ def convert_f_to_dff_perc(f_mat, perc, win_sz=500):
     
     return dff_mat
 
-def plot_stacked_traces(dff_dat, time_points, title="Stacked ΔF/F₀ Traces"):
+def plot_stacked_traces(dff_dat: np.ndarray, time_points: np.ndarray, 
+                        title: str="Stacked ΔF/F₀ Traces") -> None:
     """
-    Plots stacked traces of ΔF/F₀ for multiple neurons over time.
-    
-    Parameters:
-    dff_dat (ndarray): Delta F/F₀ data matrix with neurons as rows and time points as columns.
-    time_points (ndarray): Array of time points corresponding to the columns in dff_dat.
-    title (str): Title of the plot. Default is "Stacked ΔF/F₀ Traces".
+    Plot stacked traces of ΔF/F₀ for multiple neurons over time.
+    Args:
+        dff_dat: Delta F/F₀ data matrix with neurons as rows and time points as columns.
+        time_points: Array of time points corresponding to the columns in dff_dat.
+        title: Title of the plot. Default is "Stacked ΔF/F₀ Traces".
     """
     # Ensure dff_dat and time_points are numpy arrays
     dff_dat = np.array(dff_dat)
@@ -99,23 +99,24 @@ def plot_stacked_traces(dff_dat, time_points, title="Stacked ΔF/F₀ Traces"):
     plt.show()
 
 
-def draw_dff_activity(act_dat, act_filt_nsp_ids, max_dff_int, begin_tp, end_tp, sz_per_neuron, analysis_dir, base_fname, n_start=0, n_stop=-1, dff_bar=1, frate=30, lw=.2):
+def draw_dff_activity(act_dat: np.ndarray, act_filt_nsp_ids: np.array, max_dff_int: float, 
+                      begin_tp: int, end_tp: int, sz_per_neuron, analysis_dir: str, base_fname: str, 
+                      n_start: int=0, n_stop: int=-1, dff_bar: float=1.0, frate: int=30, lw: float=0.2) -> None:
     """
-    Plots the activity data of neurons within a specified time range.
-    
-    Parameters:
-    act_dat (ndarray): Activity data matrix with neurons as rows and time points as columns.
-    act_filt_nsp_ids (array): Array of neuron IDs corresponding to the rows of act_dat.
-    max_dff_int (float): Maximum ΔF/F intensity for scaling the plot.
-    begin_tp (int): Starting time point for the plot.
-    end_tp (int): Ending time point for the plot.
-    n_start (int): Index of the first cell to plot.
-    n_stop (int): Index of the last cell to plot.
-    dff_bar (float): Height of the ΔF/F scale bar.
-    frate (int): Frames per second of the data.
-    lw (float): Line width of the plot.
-    analysis_dir (str): Directory where the plot will be saved.
-    base_fname (str): Base filename for the plot.
+    Plot the activity data of neurons within a specified time range.
+    Args:
+        act_dat: Activity data matrix with neurons as rows and time points as columns.
+        act_filt_nsp_ids: Array of neuron IDs corresponding to the rows of act_dat.
+        max_dff_int: Maximum ΔF/F intensity for scaling the plot.
+        begin_tp: Starting time point for the plot.
+        end_tp: Ending time point for the plot.
+        analysis_dir: Directory where the plot will be saved.
+        base_fname: Base filename for the plot.
+        n_start: Index of the first cell to plot.
+        n_stop: Index of the last cell to plot.
+        dff_bar: Height of the ΔF/F scale bar.
+        frate: Frames per second of the data.
+        lw: Line width of the plot.
     """
     # Ensure valid end_tp
     end_tp = end_tp if end_tp >= 0 else act_dat.shape[1]
@@ -173,17 +174,16 @@ def draw_dff_activity(act_dat, act_filt_nsp_ids, max_dff_int, begin_tp, end_tp, 
     fig.savefig(os.path.join(analysis_dir, f'df_f0_graph_{base_fname}.tif'), format='tiff')
 
 
-def overlay_images(im_avg, binary_overlay, overlay_color=[255, 255, 0]):
+def overlay_images(im_avg: np.ndarray, binary_overlay: np.ndarray, 
+                   overlay_color: list=[255, 255, 0]) -> np.ndarray:
     """
     Create an overlay image with a specific color for the binary overlay and gray for the background.
-
-    Parameters:
-    im_avg (ndarray): The average image (grayscale).
-    binary_overlay (ndarray): The binary overlay image.
-    overlay_color (list): The RGB color for the binary overlay.
-
+    Args:
+        im_avg: The average image (grayscale).
+        binary_overlay: The binary overlay image.
+        overlay_color: The RGB color for the binary overlay.
     Returns:
-    overlay_image (ndarray): The combined overlay image.
+        overlay_image: The combined overlay image.
     """
     # Normalize the grayscale image to the range [0, 255]
     im_avg_norm = (255 * (im_avg - np.min(im_avg)) / (np.max(im_avg) - np.min(im_avg))).astype(np.uint8)
@@ -200,20 +200,19 @@ def overlay_images(im_avg, binary_overlay, overlay_color=[255, 255, 0]):
     
     return combined_image
 
-def create_montage(images, im_avg, grid_shape, overlay_color=[255, 255, 0], rescale_intensity=False):
+def create_montage(images: List[np.ndarray], im_avg: np.ndarray, grid_shape: Tuple[int, int], 
+                   overlay_color: list=[255, 255, 0], rescale_intensity: bool=False) -> np.ndarray:
     """
-    Creates a montage from a list of images arranged in a specified grid shape,
+    Create a montage from a list of images arranged in a specified grid shape,
     with an overlay color applied to binary images and gray background.
-
-    Parameters:
-    images (list of ndarray): List of binary images to be arranged in a montage.
-    im_avg (ndarray): The average image (grayscale) for background.
-    grid_shape (tuple): Shape of the grid for arranging the images (rows, columns).
-    overlay_color (list): The RGB color for the binary overlay.
-    rescale_intensity (bool): Flag to indicate if image intensity should be rescaled. Default is False.
-
+    Args:
+        images: List of binary images to be arranged in a montage.
+        im_avg: The average image (grayscale) for background.
+        grid_shape: Shape of the grid for arranging the images (rows, columns).
+        overlay_color: The RGB color for the binary overlay.
+        rescale_intensity: Flag to indicate if image intensity should be rescaled. Default is False.
     Returns:
-    montage (ndarray): Montage image.
+        montage: Montage image.
     """
     # Calculate the shape of the montage grid
     n_images = len(images)

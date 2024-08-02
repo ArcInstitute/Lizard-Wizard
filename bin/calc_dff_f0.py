@@ -45,6 +45,17 @@ parser.add_argument("-t", "--threshold-percentile", type=float, default=0.75,
 # functions
 def read_img_file(img_file: str, file_type: str) -> tuple:
     """
+    Read the image file and return the image data, frame rate, image shape, image size and average image.
+    Args:
+        img_file: path to the image file
+        file_type: type of the image file
+    Returns:
+        tuple of image data
+        - im: image data
+        - frate: frame rate
+        - im_shape: image shape
+        - im_sz: image size
+        - im_avg: average image
     """
     # Load the image data
     if file_type.lower() == 'moldev' and img_file.endswith('_full.tif'):
@@ -75,11 +86,47 @@ def read_img_file(img_file: str, file_type: str) -> tuple:
 def main(args):
     # Read the image file and get various parameters
     im, frate, im_shape, im_sz, im_avg = read_img_file(args.img_file, args.file_type)
-    #print(f"Image shape: {im_shape}")
-    #print(f"Image size: {im_sz}")
 
+    # check if the mask file is provided
+    masks = check_and_load_file(args.img_mask_file)
 
+    # calc the background intensity
+    if masks is not None:
+        mask_bg = (masks < 1) & (im_avg > 0)
+        im_bg = np.median(im_avg[mask_bg]) * 0.9
+    else:
+        im_bg = np.median(im_avg) * 0.9
+    logging.info(f'im_bg estimated as {im_bg}')
+
+    # Load additional data (matrix A)
+    A = check_and_load_file(args.cnm_A_file)
+
+    # Initialize storage for processed images
+    im_st = np.zeros((A.shape[1], im_sz[0], im_sz[1]), dtype='uint16')
+    p_th = args.threshold_percentile
+    logging.info('Generating im_st with p_th of {p_th}')
+    dict_mask = {}
     
+    # Generate im_st by thresholding the components in A
+    for i in range(A.shape[1]):
+        Ai = np.copy(A[:, i])
+        Ai = Ai[Ai > 0]
+        thr = np.percentile(Ai, p_th)
+        imt = np.reshape(A[:, i], im_sz, order='F')
+        im_thr = np.copy(imt)
+        im_thr[im_thr < thr] = 0
+        im_thr[im_thr >= thr] = i + 1
+        im_st[i, :, :] = im_thr
+        dict_mask[i] = im_thr > 0
+
+    # Calculate the grid shape
+    n_images = len(im_st)
+    grid_shape = (np.ceil(np.sqrt(n_images)).astype(int), np.ceil(np.sqrt(n_images)).astype(int))
+    
+    # Create the montage for all components
+    montage_image = create_montage(im_st, im_avg, grid_shape)    
+
+
 ## script main
 if __name__ == '__main__':
     args = parser.parse_args()
