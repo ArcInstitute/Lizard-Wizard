@@ -204,10 +204,10 @@ def main(args):
     logger = io.logger_setup()
 
     # Load the image data
-    if args.file_type.lower() == 'moldev':
+    if args.file_type.lower() == "moldev":
         # Extract the image data for Molecular Devices
         im, frate = load_image_data_moldev_concat(args.img_file)
-    elif args.file_type.lower() == 'zeiss':
+    elif args.file_type.lower() == "zeiss":
         # Extract the image data for Zeiss images
         im, frate = load_image_data_czi(args.img_file)
     else:
@@ -237,9 +237,14 @@ def main(args):
     # If segmentation/masking fails, write unmasked image
     if masks is None:
         logging.warning("Masking failed; writing the unmasked image")
-        outfile = os.path.splitext(args.img_file)[0] + "_no-masked.tif"
+        # masked image
+        outfile = os.path.splitext(args.img_file)[0] + "_no-masked.tif"  
         tifffile.imwrite(outfile, im)
         logging.info(f"No-masked image saved to {outfile}")
+        # image masks
+        outfile = os.path.splitext(args.img_file)[0] + "_no-masks.tif"
+        open(outfile, "w").close()
+        logging.info(f"No-masks image saved to {outfile}")
         exit(0)
 
     # Format the masks

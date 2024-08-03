@@ -21,8 +21,8 @@ def check_and_load_file(file_path: str) -> np.ndarray:
         Loaded file content if successful, otherwise None.
     """
     # if masked named "_no-mask.tif", then return None
-    if file_path.endswith('_no-mask.tif'):
-        logging.info("Mask file is 'no-mask', so not using")
+    if file_path.endswith('no-masks.tif'):
+        logging.info("Mask file is 'no-masks', so not using")
         return None
 
     # Load the file based on its extension
@@ -231,3 +231,17 @@ def create_montage(images: List[np.ndarray], im_avg: np.ndarray, grid_shape: Tup
         montage[y * img_height:(y + 1) * img_height, x * img_width:(x + 1) * img_width] = overlay_img
 
     return montage
+
+
+def plot_montage(montage_image, outfile: str) -> None:
+    # Plot the montage for all components
+    plt.figure(figsize=(10, 10))
+    plt.imshow(montage_image)
+    plt.title('Montage of All df/f0 spatial components')
+    plt.axis('off')
+
+    # Save the montage image
+    #plt.show()
+    plt.savefig(outfile)
+    plt.close()
+    logging.info(f"Montage image saved to {outfile}")

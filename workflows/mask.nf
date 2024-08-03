@@ -9,8 +9,9 @@ workflow MASK_WF {
     ch_img_mask = MASK(ch_img, ch_models.collect())
     
     emit:
-    mask = ch_img_mask.masked
-    img = ch_img_mask.img
+    img_orig = ch_img_mask.img_orig // original images
+    img_masked = ch_img_mask.masked // masked images
+    img_masks = ch_img_mask.masks   // image masks
 }
 
 def saveAsMask(file) {
@@ -27,10 +28,10 @@ process MASK {
     path "models/*"
 
     output:
-    tuple path("frate.txt"), path("*masked.tif"), emit: masked
-    path img_file,                                emit: img
+    tuple path("frate.txt"), path("*masked.tif"), emit: masked    // masked image
+    path img_file,                                emit: img_orig  // original image
+    path "*masks.tif",                            emit: masks     // image masks
     path "*masked-plot.tif",                      emit: masked_plot, optional: true
-    path "*masks.tif",                            emit: masks, optional: true
     path "*minprojection.tif",                    emit: minprojection, optional: true
     path "${img_basename}.log",                   emit: log  
 

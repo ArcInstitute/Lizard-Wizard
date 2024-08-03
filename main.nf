@@ -12,7 +12,11 @@ workflow {
     MASK_WF(ch_img)
 
     // Run Caiman
-    CAIMAN_WF(MASK_WF.out.img, MASK_WF.out.mask)
+    CAIMAN_WF(
+        MASK_WF.out.img_orig, 
+        MASK_WF.out.img_masked, 
+        MASK_WF.out.img_masks
+    )
 }
 
 
