@@ -98,7 +98,6 @@ def plot_stacked_traces(dff_dat: np.ndarray, time_points: np.ndarray,
     plt.yticks([])
     plt.show()
 
-
 def draw_dff_activity(act_dat: np.ndarray, act_filt_nsp_ids: np.array, max_dff_int: float, 
                       begin_tp: int, end_tp: int, sz_per_neuron, analysis_dir: str, base_fname: str, 
                       n_start: int=0, n_stop: int=-1, dff_bar: float=1.0, frate: int=30, lw: float=0.2) -> None:
@@ -173,7 +172,6 @@ def draw_dff_activity(act_dat: np.ndarray, act_filt_nsp_ids: np.array, max_dff_i
     # Save plot
     fig.savefig(os.path.join(analysis_dir, f'df_f0_graph_{base_fname}.tif'), format='tiff')
 
-
 def overlay_images(im_avg: np.ndarray, binary_overlay: np.ndarray, 
                    overlay_color: list=[255, 255, 0]) -> np.ndarray:
     """
@@ -232,8 +230,16 @@ def create_montage(images: List[np.ndarray], im_avg: np.ndarray, grid_shape: Tup
 
     return montage
 
+def plot_montage(montage_image: np.ndarray, outfile: str) -> None:
+    """
+    Plot the montage image and save it to a file.
+    Args:
+        montage_image: The montage image to be plotted.
+        outfile: Path to save the montage image.
+    """
+    # Set logging level to WARNING to suppress matplotlib debug messages
+    logging.getLogger('matplotlib').setLevel(logging.WARNING)
 
-def plot_montage(montage_image, outfile: str) -> None:
     # Plot the montage for all components
     plt.figure(figsize=(10, 10))
     plt.imshow(montage_image)
@@ -245,3 +251,6 @@ def plot_montage(montage_image, outfile: str) -> None:
     plt.savefig(outfile)
     plt.close()
     logging.info(f"Montage image saved to {outfile}")
+
+    # Reset logging level to INFO
+    logging.getLogger('matplotlib').setLevel(logging.INFO)

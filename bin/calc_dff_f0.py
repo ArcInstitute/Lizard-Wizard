@@ -88,8 +88,15 @@ def read_img_file(img_file: str, file_type: str) -> tuple:
     return im, frate, im_shape, im_sz, im_avg
 
 def main(args):
-    # output basename
+    # output 
+    ## basename
     base_fname = os.path.splitext(os.path.basename(args.img_file))[0]
+    ## directory
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir, exist_ok=True)
+    ## file names
+    outfile_montage = os.path.join(args.output_dir, base_fname + "_montage.png")
+    outfile_montage_filtered = os.path.join(args.output_dir, base_fname + "_montage-filtered.png")
 
     # Read the image file and get various parameters
     logging.info(f"Reading image file: {args.img_file}")
@@ -110,6 +117,13 @@ def main(args):
     # Load additional data (matrix A)
     logging.info(f"Reading matrix A file: {args.cnm_A_file}")
     A = check_and_load_file(args.cnm_A_file)
+
+    # Check whether A is blank
+    if A.shape[1] == 0:
+        logging.error("Matrix A is blank. Writing out blank files and exiting...")
+        open(outfile_montage, "w").close()
+        open(outfile_montage_filtered, "w").close()
+        exit()
 
     # Initialize storage for processed images
     im_st = np.zeros((A.shape[1], im_sz[0], im_sz[1]), dtype='uint16')
@@ -136,10 +150,8 @@ def main(args):
     # Create the montage for all components
     logging.info("Creating montage image...")
     montage_image = create_montage(im_st, im_avg, grid_shape)
-    outfile = os.path.join(args.output_dir, base_fname + "_montage.png")
-    plot_montage(montage_image, outfile)
-    exit();
-
+    plot_montage(montage_image, outfile_montage)
+    
     # Filtered components montage
     ## Load index of accepted components from previous filtering step
     logging.info(f"Reading index file: {args.cnm_idx_file}")
@@ -152,9 +164,7 @@ def main(args):
     ### Create the montage for all components
     logging.info("Creating montage image...")
     montage_image = create_montage(im_st, im_avg, grid_shape)
-
-    print(montage_image.shape)
-    exit(1)
+    plot_montage(montage_image, outfile_montage_filtered)
 
 ## script main
 if __name__ == '__main__':
