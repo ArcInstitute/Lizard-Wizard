@@ -71,8 +71,11 @@ nextflow run main.nf \
   --output /path/to/output/location/
 ```
 
-> If you are not in the `multiomics` user group (check by running the `groups` command), 
-> you will need to change the `scratch` and `work-dir` paths.
+**Notes:**
+
+* See `./nextflow.config` for all input parameters (e.g., specifying the input file type).
+* If you are not in the `multiomics` user group (check by running the `groups` command), 
+  you will need to change the `scratch` and `work-dir` paths.
 
 ## Test runs
 
@@ -158,6 +161,9 @@ nextflow run main.nf \
 
 ## TODO
 
+[ ] Add metrics
+[ ] Fix `calc_dff_f0`
+[ ] Add log summary
 [ ] Update Caiman (stop using github release)
 
 ## Local runs
