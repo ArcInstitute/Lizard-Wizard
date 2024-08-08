@@ -3,49 +3,26 @@ Lizard Wizard
 
 <img src="./img/lizard-wizard.png" alt="drawing" width="400"/>
 
-Calcium imaging analysis Nextflow pipeline for the Arc Institute.
+**Calcium imaging analysis Nextflow pipeline for the Arc Institute.**
 
-# Dev
+**Table of Contents**
 
-## TODO
+1. [Installation](#installation)
+    1. [Conda & mamba install](#conda--mamba-install)
+    2. [Nextflow install](#nextflow-install)
+    3. [Pipeline install](#pipeline-install)
+        1. [Pipeline conda environments](#pipeline-conda-environments)
+2. [Usage](#usage)
+    1. [Parameters](#parameters)
+    2. [Example Run](#example-run)
+    3. [Test runs](#test-runs)
+        1. [Local runs](#local-runs)
+        2. [Slurm runs](#slurm-runs)
+3. [Resources](#resources)
+4. [Workflow](#workflow)
+    1. [Input](#input)
+    2. [Processing](#processing)
 
-[ ] Update Caiman (stop using github release)
-
-## Local runs
-
-Zeiss 3d:
-
-```bash
-nextflow run main.nf \
-  -profile dev_zeiss_3d,vm,conda \
-  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)/lizard-wizard
-```
-
-Molecular devices 3d:
-
-```bash
-nextflow run main.nf \
-  -profile dev_moldev_3d,vm,conda \
-  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)/lizard-wizard
-```
-
-Molecular devices 2d:
-
-```bash
-nextflow run main.nf \
-  -profile dev_moldev_2d,vm,conda \
-  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)/lizard-wizard
-```
-
-## Slurm runs
-
-```bash
-nextflow run main.nf \
-  --test_image_count 3 \
-  -profile dev_zeiss_3d,conda,slurm \
-  -process.scratch /media/8TBNVME/multiomics/ \
-  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)/lizard-wizard
-```
 
 # Installation
 
@@ -175,14 +152,57 @@ nextflow run main.nf \
     * run `caiman` on each image
       * [setup_cluster() info](https://github.com/flatironinstitute/CaImAn/blob/e7e86411e80639c81d8ea58026660913739704f7/docs/source/Getting_Started.rst#cluster-setup-and-shutdown)
   
+***
 
-# Data 
+# Dev
 
-## local
+## TODO
+
+[ ] Update Caiman (stop using github release)
+
+## Local runs
+
+Zeiss 3d:
+
+```bash
+nextflow run main.nf \
+  -profile dev_zeiss_3d,vm,conda \
+  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)/lizard-wizard
+```
+
+Molecular devices 3d:
+
+```bash
+nextflow run main.nf \
+  -profile dev_moldev_3d,vm,conda \
+  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)/lizard-wizard
+```
+
+Molecular devices 2d:
+
+```bash
+nextflow run main.nf \
+  -profile dev_moldev_2d,vm,conda \
+  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)/lizard-wizard
+```
+
+## Slurm runs
+
+```bash
+nextflow run main.nf \
+  --test_image_count 3 \
+  -profile dev_zeiss_3d,conda,slurm \
+  -process.scratch /media/8TBNVME/multiomics/ \
+  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)/lizard-wizard
+```
+
+## Data 
+
+### local
 
 `/large_experiments/multiomics/lizard_wizard`
 
-## GCP
+### GCP
 
 * Zeiss - 3d
   * VM: `caiman-cmtc-vm`

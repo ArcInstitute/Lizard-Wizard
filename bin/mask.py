@@ -220,9 +220,14 @@ def main(args):
     # Save the image as a tif file, if no masking
     if args.use_2d:
         logging.info("2D image, skipping masking")
+        # masked image
         outfile = os.path.splitext(args.img_file)[0] + "_no-masked.tif"
         tifffile.imwrite(outfile, im)
         logging.info(f"No-masked image saved to {outfile}")
+        # image masks
+        outfile = os.path.splitext(args.img_file)[0] + "_no-masks.tif"
+        open(outfile, "w").close()
+        logging.info(f"No-masks image saved to {outfile}")
         exit(0)
 
     # Squeeze the image
