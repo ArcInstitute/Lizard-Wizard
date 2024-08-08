@@ -7,27 +7,28 @@ workflow INPUT_WF {
         // Molecular Divices file type
         ch_img = MOLDEV_CONCAT().img.flatten()
     } else {
-        // raise error if the file_type is not supported
+        // Raise error if the file_type is not supported
         error "Unsupported file_type: '${params.file_type}'. Supported types are 'zeiss' and 'moldev'."
     }
-    // check that the channel is not empty
+    // Check that the channel is not empty
     ch_img = ch_img.ifEmpty { error "No image files found in the input directory: ${params.input_dir}" }
 
     // Spot Check: filter the images, if needed
     /// Note: for moldev, the spot check is done in the MOLDEV_CONCAT process
     if(params.file_type == "zeiss"){
-        if(params.test_image_nums != null){
-            println "Selecting test images: ${params.test_image_nums}"
-            // convert the string to a list of integers
-            def test_image_nums = params.test_image_nums.split(",").collect{ it.toInteger() }
-            // select indices from the list of images
-            ch_img = ch_img.collect().map{ list -> test_image_nums.collect{ list[it] } }.flatten()
-        } else if (params.test_image_count.toInteger() > 0){
-            // select random images
+        if (params.test_image_count.toInteger() > 0){
+            // Select random images
             def image_str = params.test_image_count.toInteger() > 1 ? "images" : "image"
             println "Selecting ${params.test_image_count} random test ${image_str}"
             ch_img = ch_img.randomSample(params.test_image_count.toInteger())
         }
+        else if(params.test_image_nums != null){
+            println "Selecting test images: ${params.test_image_nums}"
+            // Convert the string to a list of integers
+            def test_image_nums = params.test_image_nums.split(",").collect{ it.toInteger() }
+            // Select indices from the list of images
+            ch_img = ch_img.collect().map{ list -> test_image_nums.collect{ list[it] } }.flatten()
+        } 
     }
 
     // Create tuple of (base_name, image_path) for each image
@@ -37,6 +38,7 @@ workflow INPUT_WF {
     ch_img
 }
 
+// Load and concatenate Molecular Devices images
 process MOLDEV_CONCAT {
     conda "envs/cellpose.yml"
     label "process_low"

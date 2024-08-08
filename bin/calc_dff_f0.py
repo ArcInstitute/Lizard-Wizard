@@ -37,7 +37,7 @@ parser.add_argument("img_file", type=str,
                     help="Unmasking image file.")
 parser.add_argument("img_masks_file", type=str,
                     help="Image masks. If file ends with '_no-masks.tif' then no mask is used.")
-parser.add_argument("-o", "--output-dir", type=str, default='calc-dff-f0_output',
+parser.add_argument("-o", "--output-dir", type=str, default='output',
                     help="Output directory")
 parser.add_argument("-f", "--file-type", type=str, default='zeiss',
                     choices = ['moldev', 'zeiss'], 
@@ -97,6 +97,7 @@ def main(args):
     ## file names
     outfile_montage = os.path.join(args.output_dir, base_fname + "_montage.png")
     outfile_montage_filtered = os.path.join(args.output_dir, base_fname + "_montage-filtered.png")
+    outfile_im_st = os.path.join(args.output_dir, base_fname + "_im-st.tif")
 
     # Read the image file and get various parameters
     logging.info(f"Reading image file: {args.img_file}")
@@ -123,6 +124,7 @@ def main(args):
         logging.error("Matrix A is blank. Writing out blank files and exiting...")
         open(outfile_montage, "w").close()
         open(outfile_montage_filtered, "w").close()
+        open(outfile_im_st, "w").close()
         exit()
 
     # Initialize storage for processed images
@@ -142,6 +144,9 @@ def main(args):
         im_thr[im_thr >= thr] = i + 1
         im_st[i, :, :] = im_thr
         dict_mask[i] = im_thr > 0
+
+    # Save the generated im_st image
+    tifffile.imwrite(outfile_im_st, im_st)
 
     # Calculate the grid shape
     n_images = len(im_st)

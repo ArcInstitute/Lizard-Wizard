@@ -14,10 +14,12 @@ workflow MASK_WF {
     img_masks = ch_img_mask.masks   // image masks
 }
 
+// Helper function to format the output file name
 def saveAsMask(file) {
     (file.size() > 0 && !file.endsWith('.txt')) ? file : null
 }
 
+// Mask an image using cellpose
 process MASK {
     publishDir file(params.output_dir) / "mask", mode: "copy", overwrite: true, saveAs: { file -> saveAsMask(file) }
     conda "envs/cellpose.yml"
@@ -45,6 +47,7 @@ process MASK {
     """
 }
 
+// Download cellpose models
 process DOWNLOAD_CELLPOSE_MODELS {
     conda "envs/cellpose.yml"
 

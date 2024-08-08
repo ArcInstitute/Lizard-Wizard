@@ -9,16 +9,24 @@ workflow CAIMAN_WF {
     CAIMAN(ch_img_orig, ch_img_masked, ch_img_masks)
 
     // run calc_dff_f0
+    /*
     CALC_DFF_F0(
         CAIMAN.out.cnm_A, 
         CAIMAN.out.cnm_idx,
         CAIMAN.out.img_orig,
         CAIMAN.out.img_masks
     )
+    */
 }
 
+// Helper function to format the output file name
+def saveAsCaiman(file){
+    return file.split("/").last()
+}
 
+// Calculate dF/F0
 process CALC_DFF_F0 {
+    publishDir file(params.output_dir) / "caiman" / "calc_dff_f0", mode: "copy", overwrite: true, saveAs: { file -> saveAsCaiman(file) }
     conda "envs/caiman.yml"
    
     input:
@@ -39,10 +47,7 @@ process CALC_DFF_F0 {
     """
 }
 
-def saveAsCaiman(file){
-    return file.split("/").last()
-}
-
+// Run CaImAn
 process CAIMAN {
     publishDir file(params.output_dir) / "caiman", mode: "copy", overwrite: true, saveAs: { file -> saveAsCaiman(file) }
     conda "envs/caiman.yml"

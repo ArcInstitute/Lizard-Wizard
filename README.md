@@ -18,7 +18,7 @@ Zeiss 3d:
 ```bash
 nextflow run main.nf \
   -profile dev_zeiss_3d,vm,conda \
-  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)
+  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)/lizard-wizard
 ```
 
 Molecular devices 3d:
@@ -26,7 +26,7 @@ Molecular devices 3d:
 ```bash
 nextflow run main.nf \
   -profile dev_moldev_3d,vm,conda \
-  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)
+  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)/lizard-wizard
 ```
 
 Molecular devices 2d:
@@ -34,16 +34,17 @@ Molecular devices 2d:
 ```bash
 nextflow run main.nf \
   -profile dev_moldev_2d,vm,conda \
-  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)
+  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)/lizard-wizard
 ```
 
 ## Slurm runs
 
 ```bash
 nextflow run main.nf \
+  --test_image_count 3 \
   -profile dev_zeiss_3d,conda,slurm \
   -process.scratch /media/8TBNVME/multiomics/ \
-  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)
+  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)/lizard-wizard
 ```
 
 # Installation
@@ -82,14 +83,15 @@ Nextflow will automatically create the environments as long as `mamba` is instal
 
 See `nextflow.config` for the parameters that can be set.
 
-## Run
+## Example Run
 
 ```bash
 nextflow run main.nf \
   -profile conda,slurm \
   -process.scratch /media/8TBNVME/multiomics/ \
   -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)
-  --input 
+  --input /path/to/image/files/ \
+  --output /path/to/output/location/
 ```
 
 > If you are not in the `multiomics` user group (check by running the `groups` command), 
@@ -97,9 +99,12 @@ nextflow run main.nf \
 
 ## Test runs
 
+Below are test runs with sample datasets.
+
 ### Local runs 
 
-> `Local` will use the resources in your current session, instead of submitting jobs to the cluster.
+> `Local` means using the resources in your current session, instead of submitting jobs to the cluster.
+>  Note: you might need to increase the number of CPUs and memory in order to run the pipeline locally.
 
 Zeiss 3d:
 
@@ -125,7 +130,7 @@ nextflow run main.nf \
   -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)
 ```
 
-## Slurm runs
+### Slurm runs
 
 An example of processing Zeiss 3d images on the cluster:
 
@@ -135,7 +140,6 @@ nextflow run main.nf \
   -process.scratch /media/8TBNVME/multiomics/ \
   -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)
 ```
-
 
 # Resources
 
