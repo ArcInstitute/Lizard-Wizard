@@ -50,15 +50,31 @@ def summarize_log(log_content: str, client: openai.Client, max_tokens: int=1000)
     )
     return completion.choices[0].message.content
 
+def write_blank_files(log_files: list, output_dir: str):
+    """
+    Write out blank output files for each log file.
+    Args:
+        log_files: list of log files
+        output_dir: output directory
+    """
+    for log_file in log_files:
+        outfile_base = os.path.splitext(os.path.basename(log_file))[0] + "_summary.md"
+        outfile = os.path.join(output_dir,  outfile_base)
+        open(outfile, "w").close()
+        print(f"  Blank summary written to {outfile}", file=sys.stderr)
+
 # functions
 def main(args):
-    # Check for OPENAI_API_KEY
-    if os.getenv("OPENAI_API_KEY") is None:
-        raise ValueError("No OPENAI_API_KEY environment variable")
-
     # Output directory
     os.makedirs(args.output_dir, exist_ok=True)
-    
+
+    # Check for OPENAI_API_KEY
+    if os.getenv("OPENAI_API_KEY") is None:
+        print("WARNING: No OPENAI_API_KEY environment variable", file=sys.stderr)
+        # write out blank output files
+        write_blank_files(args.log_files, args.output_dir)
+        exit()
+
     # Create openai client
     client = openai.Client()
     
@@ -80,7 +96,7 @@ def main(args):
         with open(outfile, "w") as f:
             f.write(summary + "\n")
         print(f"  Summary written to {outfile}", file=sys.stderr)
-        
+
         # Append to summaries
         all_summaries += f"--- {outfile_base} ---\n" + summary + "\n\n"
     

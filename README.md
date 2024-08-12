@@ -60,6 +60,18 @@ Nextflow will automatically create the environments as long as `mamba` is instal
 
 See `nextflow.config` for the parameters that can be set.
 
+## Secrets
+
+[Optional] The pipeline uses gpt-4o(-mini) to summarize the log files.
+This optional feature requires an `OPENAI_API_KEY` to be set as a Nextflow secret.
+To set the secret (assuming that `OPENAI_API_KEY` is set in the environment):
+
+```bash
+nextflow secrets set OPENAI_API_KEY $OPENAI_API_KEY
+```
+
+> If you do not set `OPENAI_API_KEY`, then the log summaries will be blank.
+
 ## Example Run
 
 ```bash
