@@ -12,6 +12,7 @@ workflow MASK_WF {
     img_orig = ch_img_mask.img_orig // original images
     img_masked = ch_img_mask.masked // masked images
     img_masks = ch_img_mask.masks   // image masks
+    mask_log = ch_img_mask.log       // log files
 }
 
 // Helper function to format the output file name

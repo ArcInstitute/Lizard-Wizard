@@ -2,6 +2,7 @@
 include { INPUT_WF } from './workflows/input.nf'
 include { MASK_WF } from './workflows/mask.nf'
 include { CAIMAN_WF } from './workflows/caiman.nf'
+include { SUMMARY_WF } from './workflows/summary.nf'
 
 // Main workflow
 workflow {
@@ -16,6 +17,12 @@ workflow {
         MASK_WF.out.img_orig, 
         MASK_WF.out.img_masked, 
         MASK_WF.out.img_masks
+    )
+
+    // Summarize log files
+    SUMMARY_WF(
+        MASK_WF.out.mask_log,
+        CAIMAN_WF.out.caiman_log
     )
 }
 

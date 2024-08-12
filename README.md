@@ -66,7 +66,7 @@ See `nextflow.config` for the parameters that can be set.
 nextflow run main.nf \
   -profile conda,slurm \
   -process.scratch /media/8TBNVME/multiomics/ \
-  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)
+  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)/lizard-wizard
   --input /path/to/image/files/ \
   --output /path/to/output/location/
 ```
@@ -91,7 +91,7 @@ Zeiss 3d:
 ```bash
 nextflow run main.nf \
   -profile dev_zeiss_3d,vm,conda \
-  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)
+  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)/lizard-wizard
 ```
 
 Molecular devices 3d:
@@ -99,7 +99,7 @@ Molecular devices 3d:
 ```bash
 nextflow run main.nf \
   -profile dev_moldev_3d,vm,conda \
-  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)
+  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)/lizard-wizard
 ```
 
 Molecular devices 2d:
@@ -107,7 +107,7 @@ Molecular devices 2d:
 ```bash
 nextflow run main.nf \
   -profile dev_moldev_2d,vm,conda \
-  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)
+  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)/lizard-wizard
 ```
 
 ### Slurm runs

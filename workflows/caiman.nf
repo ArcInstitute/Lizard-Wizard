@@ -17,6 +17,9 @@ workflow CAIMAN_WF {
         CAIMAN.out.img_masks
     )
     */
+
+    emit:
+    caiman_log = CAIMAN.out.log
 }
 
 // Helper function to format the output file name

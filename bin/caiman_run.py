@@ -89,11 +89,13 @@ def setup_cluster(processes: int=1) -> int:
     n_processes = 0  # Initialize n_processes
     try:
         # Set up a new cluster with the specified number of processes
+        logging.disable(logging.ERROR)
         _, cluster, n_processes = cm.cluster.setup_cluster(
             backend="multiprocessing", 
             n_processes=processes, 
             ignore_preexisting=True
         )
+        logging.disable(logging.INFO)
         logging.info(f"  Successfully set up a new cluster with {n_processes} processes")
     except Exception as e:
         logging.warning(f"  Error during cluster setup: {str(e)}")
@@ -121,25 +123,29 @@ def close_cluster():
     else:
         logging.info("No cluster to close.")
 
-def plot_correlations(cn_filter, pnr, output_dir: str) -> None:
+def plot_correlations(cn_filter, pnr, base_fname: str, output_dir: str) -> None:
     """
     Plots the correlation and peak-to-noise ratio images side by side.
     Args:
         cn_filter: The correlation image data
         pnr: The peak-to-noise ratio image data
+        base_fname: The base filename of the input image
         output_dir: The output directory to save the plots
     """
     logging.info("Plotting correlation and peak-to-noise ratio images...")
-    logging.getLogger('matplotlib').setLevel(logging.WARNING)
+    logging.disable(logging.WARNING)
 
     # Create a plot of the correlation and peak-to-noise ratio images
     inspect_correlation_pnr(cn_filter, pnr)
     ## Save the plot
-    outfile = os.path.join(output_dir, 'correlation_pnr.png')
+    outfile = os.path.join(output_dir, base_fname + '_correlation-pnr.png')
     plt.savefig(outfile)
     plt.close()
+    ## Status
+    logging.disable(logging.INFO)
     logging.info(f"Correlation and peak-to-noise ratio images saved to {outfile}")
-            
+    logging.disable(logging.WARNING)
+
     # Create two subplots side by side to show corr and pnr histograms
     fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(12, 6))
             
@@ -170,11 +176,12 @@ def plot_correlations(cn_filter, pnr, output_dir: str) -> None:
     axes[1].set_ylabel('pnr')
             
     # Save the plot of pnr and corr filter
-    outfile = os.path.join(output_dir, 'histogram_pnr_cn_filter.png')
+    outfile = os.path.join(output_dir, base_fname + '_histogram-pnr-cn-filter.png')
     plt.savefig(outfile, format='tiff')
     #plt.close() 
+    logging.disable(logging.INFO)
     logging.info(f"Histogram of correlation and peak-to-noise ratio images saved to {outfile}")
-    logging.getLogger('matplotlib').setLevel(logging.INFO)
+    
 
 def run_caiman(im, frate: float, decay_time: float, gSig: int, rf: int, 
                tsub: int, ssub: int, n_processes: int,  motion_correct=False):
@@ -194,9 +201,7 @@ def run_caiman(im, frate: float, decay_time: float, gSig: int, rf: int,
         cnm: The CNMF object containing the results of the CNMF algorithm
     """
     logging.info("Running Caiman...")
-    
-    # Set logging level for CaImAn
-    logging.getLogger("caiman").setLevel(logging.ERROR)
+    logging.disable(logging.CRITICAL)
 
     # Set various parameters for the CaImAn execution             
     p = 1                        # order of the autoregressive system
@@ -250,6 +255,7 @@ def run_caiman(im, frate: float, decay_time: float, gSig: int, rf: int,
     cnm.fit(im)
     # set parameters for component evaluation
     cnm.params.set("quality", {"min_SNR": min_SNR, "rval_thr": r_values_min, "use_cnn": False})
+    logging.disable(logging.INFO)
     return cnm
 
 def cnm_eval_estimates(cnm, Y, frate: float, base_fname: str, output_dir: str) -> None:
@@ -330,6 +336,12 @@ def read_frate(infile: str) -> float:
         raise ValueError(f"Could not read frame rate from file {infile}")
     return frate
 
+def set_all_logger_levels(level=logging.WARNING):
+    loggers = logging.Logger.manager.loggerDict
+    for logger_name, logger in loggers.items():
+        if isinstance(logger, logging.Logger):
+            logger.setLevel(level)
+
 def main(args):
     # get the frame rate
     frate = read_frate(args.frate_file)
@@ -354,7 +366,7 @@ def main(args):
     cn_filter, pnr = cm.summary_images.correlation_pnr(Y, gSig=args.gSig, swap_dim=False)
 
     # Plot the correlation and peak-to-noise ratio images
-    plot_correlations(cn_filter, pnr, args.output_dir)
+    plot_correlations(cn_filter, pnr, base_fname, args.output_dir)
 
     # Run Caiman
     try:

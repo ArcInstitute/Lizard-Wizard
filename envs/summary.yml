@@ -1,0 +1,9 @@
+name: summary
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.11.9
+  - pip=24.0
+  - openai==1.38.0
+
