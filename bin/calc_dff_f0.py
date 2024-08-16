@@ -168,7 +168,7 @@ def main(args):
     grid_shape = (np.ceil(np.sqrt(n_images)).astype(int), np.ceil(np.sqrt(n_images)).astype(int))
     ### Create the montage for all components
     logging.info("Creating montage image...")
-    montage_image = create_montage(im_st, im_avg, grid_shape)
+    montage_image = create_montage(filtered_im_st, im_avg, grid_shape)
     plot_montage(montage_image, outfile_montage_filtered)
 
 ## script main
