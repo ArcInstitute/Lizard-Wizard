@@ -15,14 +15,17 @@ workflow MASK_WF {
     mask_log = ch_img_mask.log       // log files
 }
 
-// Helper function to format the output file name
-def saveAsMask(file) {
-    (file.size() > 0 && !file.endsWith('.txt')) ? file : null
+// Select/format the output files
+def saveAsMask(filename) {
+    if (filename.endsWith('_masks.tif') || filename.endsWith('_full_minprojection.tif') || filename.endsWith('.log')){
+        return filename
+    } 
+    return null
 }
 
-// Mask an image using cellpose
+// Mask an image using cellpose 
 process MASK {
-    publishDir file(params.output_dir) / "mask", mode: "copy", overwrite: true, saveAs: { file -> saveAsMask(file) }
+    publishDir file(params.output_dir) / "mask", mode: "copy", overwrite: true, saveAs: { filename -> saveAsMask(filename) } 
     conda "envs/cellpose.yml"
     label "process_medium_mem"
 
@@ -46,6 +49,11 @@ process MASK {
     # run cellpose
     mask.py --file-type ${params.file_type} ${use_2d} ${img_file} > "${img_basename}.log" 2>&1
     """
+
+    stub:
+    """
+    touch frate.txt image_masked.tif image_masks.tif ${img_basename}.log image_full_minprojection.tif
+    """
 }
 
 // Download cellpose models
@@ -61,5 +69,11 @@ process DOWNLOAD_CELLPOSE_MODELS {
     export CELLPOSE_LOCAL_MODELS_PATH=models
     # download cellpose models to the local path
     download_cellpose_models.py models
+    """
+
+    stub:
+    """
+    mkdir -p models
+    touch models/blank.txt
     """
 }

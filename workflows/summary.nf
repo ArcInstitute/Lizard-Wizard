@@ -5,15 +5,18 @@ workflow SUMMARY_WF {
 
     main:
     // summarize logs
-    LOG_SUMMARY(ch_mask_log, ch_caiman_log)
+    if("${secrets.OPENAI_API_KEY}" != "null"){
+        LOG_SUMMARY(ch_mask_log, ch_caiman_log)
+    }
 }
 
-def saveAsSummary(file){
+// Select/format the output files
+def saveAsSummary(filename){
     return file.split("/").last()
 }
 
 process LOG_SUMMARY {
-    publishDir file(params.output_dir) / "summary", mode: "copy", overwrite: true, saveAs: { file -> saveAsSummary(file) }
+    publishDir file(params.output_dir) / "summary", mode: "copy", overwrite: true, saveAs: { filename -> saveAsSummary(filename) }
     conda "envs/summary.yml"
     secret "OPENAI_API_KEY"
 
@@ -26,6 +29,12 @@ process LOG_SUMMARY {
 
     script:
     """
-    summarize_logs.py $mask_log $caiman_log
+    summarize_logs.py --model $params.llm $mask_log $caiman_log
+    """
+
+    stub:
+    """
+    mkdir -p output
+    touch output/summary.md
     """
 }

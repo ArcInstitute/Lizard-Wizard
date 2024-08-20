@@ -62,7 +62,7 @@ See `nextflow.config` for the parameters that can be set.
 
 ## Secrets
 
-[Optional] The pipeline uses gpt-4o(-mini) to summarize the log files.
+**[Optional]** The pipeline uses gpt-4o(-mini) to summarize the log files.
 This optional feature requires an `OPENAI_API_KEY` to be set as a Nextflow secret.
 To set the secret (assuming that `OPENAI_API_KEY` is set in the environment):
 
@@ -70,7 +70,9 @@ To set the secret (assuming that `OPENAI_API_KEY` is set in the environment):
 nextflow secrets set OPENAI_API_KEY $OPENAI_API_KEY
 ```
 
-> If you do not set `OPENAI_API_KEY`, then the log summaries will be blank.
+**Notes:**
+* If you do not set `OPENAI_API_KEY`, then the log summaries will be blank.
+* Ask Nick for the `OPENAI_API_KEY` value.
 
 ## Example Run
 
@@ -173,10 +175,10 @@ nextflow run main.nf \
 
 ## TODO
 
-[ ] Add metrics
-[ ] Fix `calc_dff_f0`
-[ ] Add log summary
 [ ] Update Caiman (stop using github release)
+[ ] Add Benchling data retrieval
+  * [example notebook](https://arcinstitute.benchling.com/arcinstitute/f/lib_mZ19r5Dn-seeding-and-maintenance-of-[…]ot-1920-neurons-and-primary-astrocytes-hpcs-repeat/edit)
+    * `EXP24000373`
 
 ## Local runs
 

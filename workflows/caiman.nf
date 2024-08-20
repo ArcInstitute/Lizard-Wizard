@@ -9,27 +9,25 @@ workflow CAIMAN_WF {
     CAIMAN(ch_img_orig, ch_img_masked, ch_img_masks)
 
     // run calc_dff_f0
-    /*
     CALC_DFF_F0(
         CAIMAN.out.cnm_A, 
         CAIMAN.out.cnm_idx,
         CAIMAN.out.img_orig,
         CAIMAN.out.img_masks
     )
-    */
 
     emit:
     caiman_log = CAIMAN.out.log
 }
 
 // Helper function to format the output file name
-def saveAsCaiman(file){
-    return file.split("/").last()
+def saveAsBase(filename){
+    return filename.split("/").last()
 }
 
 // Calculate dF/F0
 process CALC_DFF_F0 {
-    publishDir file(params.output_dir) / "caiman" / "calc_dff_f0", mode: "copy", overwrite: true, saveAs: { file -> saveAsCaiman(file) }
+    publishDir file(params.output_dir) / "caiman_calc-dff-f0", mode: "copy", overwrite: true, saveAs: { filename -> saveAsBase(filename) }
     conda "envs/caiman.yml"
    
     input:
@@ -48,11 +46,25 @@ process CALC_DFF_F0 {
       --threshold-percentile ${params.p_th} \
       $cnm_A $cnm_idx $img_orig $img_masks
     """
+    
+    stub:
+    """
+    mkdir -p output
+    touch output/blank.txt
+    """
+}
+
+// Select/format the output files
+def saveAsCaiman(filename){
+    if (filename.endsWith('_masks.tif') || filename.endsWith('_cnm_A.npy') || filename.endsWith('_cnm_idx.npy') || filename.endsWith('.log')) {
+        return saveAsBase(filename)
+    }
+    return null
 }
 
 // Run CaImAn
 process CAIMAN {
-    publishDir file(params.output_dir) / "caiman", mode: "copy", overwrite: true, saveAs: { file -> saveAsCaiman(file) }
+    publishDir file(params.output_dir) / "caiman", mode: "copy", overwrite: true, saveAs: { filename -> saveAsCaiman(filename) }
     conda "envs/caiman.yml"
     label "process_medium"
 
@@ -79,6 +91,12 @@ process CAIMAN {
 
     # run the caiman process
     caiman_run.py -p $task.cpus $frate $img_masked > "${img_masked_basename}.log" 2>&1
+    """
+
+    stub:
+    """
+    mkdir -p caiman_output
+    touch caiman_output/${img_masked.baseName}_cnm_A.npy caiman_output/${img_masked.baseName}_cnm_idx.npy ${img_masked.baseName}.log
     """
 }
 

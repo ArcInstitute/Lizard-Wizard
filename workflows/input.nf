@@ -56,4 +56,10 @@ process MOLDEV_CONCAT {
       --output-dir tiff_combined ${params.input_dir} \
       > moldev_img_concat.log 2>&1
     """
+
+    stub:
+    """
+    mkdir -p tiff_combined
+    touch tiff_combined/empty.tif moldev_img_concat.log
+    """
 }
