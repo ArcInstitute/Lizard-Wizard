@@ -30,7 +30,7 @@ Lizard Wizard
 
 `mamba` is needed to run the pipeline. It is a faster version of `conda`. `mamba` can be installed via `conda`. 
 
-To install both, see the [conda/mamba Notion docs](https://www.notion.so/arcinstitute/Conda-Mamba-8106bed9553d46cca1af4e10f486bec2).
+To install both `conda` and `mamba`, see the [conda/mamba Notion docs](https://www.notion.so/arcinstitute/Conda-Mamba-8106bed9553d46cca1af4e10f486bec2).
 
 ## Nextflow install
 
@@ -38,6 +38,12 @@ It is easiest to install Nextflow using `mamba`:
 
 ```bash
 mamba install -n nextflow_env -c bioconda nextflow
+```
+
+Make sure to activate the environment before running the pipeline:
+
+```bash
+mamba activate nextflow_env
 ```
 
 ## Pipeline install
@@ -49,8 +55,9 @@ git clone https://github.com/ArcInstitute/Lizard-Wizard \
 
 ### Pipeline conda environments 
 
-The pipeline uses conda environment to manage dependencies. 
+The pipeline uses conda environments to manage dependencies. 
 Nextflow will automatically create the environments as long as `mamba` is installed.
+
 **Note:** it can take a while to create the environments, even with `mamba`.
 
 
@@ -74,7 +81,9 @@ nextflow secrets set OPENAI_API_KEY $OPENAI_API_KEY
 * If you do not set `OPENAI_API_KEY`, then the log summaries will be blank.
 * Ask Nick for the `OPENAI_API_KEY` value.
 
-## Example Run
+## Example Spot-Check Run
+
+A spot check is a small run of the pipeline to ensure that the pipeline parameters are set correctly.
 
 ```bash
 nextflow run main.nf \
@@ -82,14 +91,38 @@ nextflow run main.nf \
   -process.scratch /media/8TBNVME/multiomics/ \
   -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)/lizard-wizard
   --input /path/to/image/files/ \
-  --output /path/to/output/location/
+  --output /path/to/output/location/ \
+  --test_image_count 3
 ```
 
 **Notes:**
 
+* `--test_image_count 3` will run the pipeline on 3 randomly selected images.
+  * You can also select specific images by using `--test_image_nums` (e.g., `--test_image_nums 1,2,3`).
 * See `./nextflow.config` for all input parameters (e.g., specifying the input file type).
 * If you are not in the `multiomics` user group (check by running the `groups` command), 
-  you will need to change the `scratch` and `work-dir` paths.
+  you will need to change the `-process.scratch` and `-work-dir` paths.
+* **Make sure** to change the `--input` and `--output` paths to the correct locations.
+
+## Example Full Run
+
+After running the spot check, you can process the full dataset.
+
+```bash
+nextflow run main.nf \
+  -profile conda,slurm \
+  -process.scratch /media/8TBNVME/multiomics/ \
+  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)/lizard-wizard
+  --input /path/to/image/files/ \
+  --output /path/to/output/location/ \
+  -resume
+```
+
+**Notes:**
+* The `-resume` flag will prevent the need to re-run the samples included in the spot check, 
+  since they are already processed.
+  * For this to work, the `--output` directory must be the same as the spot check run.
+* **Make sure** to change the `--input` and `--output` paths to the correct locations.
 
 ## Test runs
 
@@ -144,31 +177,25 @@ nextflow run main.nf \
 
 ## Input
 
-* Params
-  * Directory of images (`*.czi` files)
-  * Output directory
+* Directory of images 
+* Nextflow parameters (`nextflow.config` file)
 
 ## Processing
 
-* Create sample sheet
-  * Format: 
-    * `file_basename,file_path`
-  * Python script to create csv file of images
-    * If `zeiss`: 
-      * `get_czi_files`
-        * lists `*.csz` files
-    * If `moldev`: 
-      * `concatenate_moldev_files`
-        * Concatenates related TIFF files; groups by 
-* Load sample sheet as channel
-* If `spot_check > 0`, randomly subsample images
+* Format input
+  * If `moldev`, concatenate files
+  * If `zeiss`, load images
 * For each image:
-  * run `zeiss_caiman_process` 
-    * mask each image
-      * cellpose detection
-    * run `caiman` on each image
-      * [setup_cluster() info](https://github.com/flatironinstitute/CaImAn/blob/e7e86411e80639c81d8ea58026660913739704f7/docs/source/Getting_Started.rst#cluster-setup-and-shutdown)
-  
+  * Mask via Cellpose
+  * Run CaImAn
+  * Calc F/F0 on CaImAn output
+  * Summarize the logs (optional)
+
+## Output
+
+* Processed images and other files
+* Written to the `--output` directory
+
 ***
 
 # Dev
