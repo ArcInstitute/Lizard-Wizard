@@ -99,16 +99,17 @@ def filter_tiff_files(file_groups: dict, test_image_nums: str, test_image_count:
         Dictionary of filtered TIFF files grouped by their base name
     """
     group_ids = None
-    if test_image_nums is not None:
+    if test_image_count > 0:
+        # randomly select N image groups
+        logging.info(f"Selecting {test_image_count} random image groups")
+        group_ids = np.random.choice(list(file_groups.keys()), test_image_count, replace=False)
+    elif test_image_nums is not None:
         # select specific image groups to process
         logging.info("Selecting specific image groups")
         test_image_nums = [int(i) for i in test_image_nums.split(',')]
         group_ids = list(file_groups.keys())
         group_ids = [group_ids[i] for i in test_image_nums if i < len(group_ids)]
-    elif test_image_count > 0:
-        # randomly select N image groups
-        logging.info(f"Selecting {test_image_count} random image groups")
-        group_ids = np.random.choice(list(file_groups.keys()), test_image_count, replace=False)
+    # group files by basename
     if group_ids is not None:
         file_groups = {k: v for k, v in file_groups.items() if k in group_ids}
     return file_groups

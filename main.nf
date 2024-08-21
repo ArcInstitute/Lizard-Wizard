@@ -9,6 +9,7 @@ workflow {
     // Create the image channel
     ch_img = INPUT_WF()
 
+    
     // Create the mask channel
     MASK_WF(ch_img)
 

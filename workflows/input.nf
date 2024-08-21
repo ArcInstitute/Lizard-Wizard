@@ -1,4 +1,13 @@
 workflow INPUT_WF {
+    // status
+    println("File type: ${params.file_type}")
+    if (params.test_image_count.toInteger() > 0){
+        def image_str = params.test_image_count.toInteger() > 1 ? "images" : "image"
+        println "Selecting ${params.test_image_count} random test ${image_str}"
+    } else if (params.test_image_nums != null){
+        println "Selecting test images: ${params.test_image_nums}"
+    }
+
     // Create a channel of input images
     if(params.file_type == "zeiss"){
         // Zeiss file type
@@ -14,22 +23,21 @@ workflow INPUT_WF {
     ch_img = ch_img.ifEmpty { error "No image files found in the input directory: ${params.input_dir}" }
 
     // Spot Check: filter the images, if needed
-    /// Note: for moldev, the spot check is done in the MOLDEV_CONCAT process
+    /// Note: for moldev, the sample filtering is done in the MOLDEV_CONCAT process
     if(params.file_type == "zeiss"){
         if (params.test_image_count.toInteger() > 0){
             // Select random images
-            def image_str = params.test_image_count.toInteger() > 1 ? "images" : "image"
-            println "Selecting ${params.test_image_count} random test ${image_str}"
             ch_img = ch_img.randomSample(params.test_image_count.toInteger())
         }
         else if(params.test_image_nums != null){
-            println "Selecting test images: ${params.test_image_nums}"
             // Convert the string to a list of integers
             def test_image_nums = params.test_image_nums.split(",").collect{ it.toInteger() }
             // Select indices from the list of images
             ch_img = ch_img.collect().map{ list -> test_image_nums.collect{ list[it] } }.flatten()
         } 
     }
+    
+    ch_img.view() // TODO: remove
 
     // Create tuple of (base_name, image_path) for each image
     ch_img = ch_img.map{ image_path -> tuple(image_path.baseName, image_path) }
