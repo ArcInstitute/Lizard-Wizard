@@ -56,7 +56,7 @@ process CALC_DFF_F0 {
 
 // Select/format the output files
 def saveAsCaiman(filename){
-    if (filename.endsWith('_masks.tif') || filename.endsWith('_cnm_A.npy') || filename.endsWith('_cnm_idx.npy') || filename.endsWith('.log')) {
+    if (filename.endsWith('_cnm_A.npy') || filename.endsWith('_cnm_idx.npy') || filename.endsWith('.log')) {
         return saveAsBase(filename)
     }
     return null

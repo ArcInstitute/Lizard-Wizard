@@ -36,8 +36,6 @@ workflow INPUT_WF {
             ch_img = ch_img.collect().map{ list -> test_image_nums.collect{ list[it] } }.flatten()
         } 
     }
-    
-    ch_img.view() // TODO: remove
 
     // Create tuple of (base_name, image_path) for each image
     ch_img = ch_img.map{ image_path -> tuple(image_path.baseName, image_path) }

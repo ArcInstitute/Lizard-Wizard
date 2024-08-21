@@ -2,6 +2,7 @@
 # import
 ## batteries
 from __future__ import print_function
+import re
 import os
 import sys
 import argparse
@@ -28,6 +29,9 @@ parser.add_argument("-o", "--output-dir", type=str, default="output",
 parser.add_argument("-m", "--model", type=str, default="gpt-4o-mini",
                     choices=["gpt-4o-mini", "gpt-4o"],
                     help="openai model to use.")
+parser.add_argument("-M", "--max-lines", type=int, default=5000,
+                    help="Max lines to summarize.")
+
 
 # functions
 def summarize_log(log_content: str, client: openai.Client, max_tokens: int=1000) -> str:
@@ -63,6 +67,48 @@ def write_blank_files(log_files: list, output_dir: str):
         open(outfile, "w").close()
         print(f"  Blank summary written to {outfile}", file=sys.stderr)
 
+def read_log(infile: str, max_lines: int) -> str:
+    """
+    Read the log file.
+    Args:
+        infile: input log file
+    Returns:
+        str: the log content
+    """
+    regex = re.compile(r"^/.+/([0-9A-Za-z_.]+\.py):[0-9]+:")
+    content = []
+    last_line = ""
+    last_prefix = ""
+    last_py = ""
+    with open(infile) as inF:
+        for line in inF:
+            line = line.rstrip()
+            # filter redundant lines
+            ## redundant full lines
+            if line == last_line:
+                continue
+            ## redundant prefix
+            prefix = line.split(" ", 1)[0]
+            if prefix == last_prefix:
+                continue
+            ## redundant python file
+            match = regex.match(prefix)
+            if match:
+                py = match.group(1)
+                if py == last_py:
+                    continue
+                last_py = py
+            content.append(line)
+            # update last line
+            last_line = line
+            last_prefix = prefix
+    # truncate if necessary
+    if len(content) >= max_lines:
+        print(f"Truncating log file to {max_lines} lines", file=sys.stderr)
+        content = content[:max_lines]
+        content.append(f'... (truncated to {max_lines} lines)')
+    return "\n".join(content)
+
 # functions
 def main(args):
     # Output directory
@@ -84,8 +130,7 @@ def main(args):
         print(f"Processing {log_file}", file=sys.stderr)
 
         # Read the log file
-        with open(log_file) as f:
-            log_content = f.read()
+        log_content = read_log(log_file, args.max_lines)
         
         # Summarize the log file
         summary = summarize_log(log_content, openai)
@@ -94,12 +139,14 @@ def main(args):
         outfile_base = os.path.splitext(os.path.basename(log_file))[0] + "_summary.md"
         outfile = os.path.join(args.output_dir,  outfile_base)
         with open(outfile, "w") as f:
-            f.write(summary + "\n")
+            log_file_basename = os.path.basename(log_file)
+            f.write(f"#-- Log file: {log_file_basename}  --#\n\n")
+            f.write(summary + "\n\n")
         print(f"  Summary written to {outfile}", file=sys.stderr)
 
         # Append to summaries
         all_summaries += f"--- {outfile_base} ---\n" + summary + "\n\n"
-    
+
     # summarize all summaries
     print("Summarizing all log file summaries", file=sys.stderr)
     summary = summarize_log(all_summaries, openai, max_tokens=1500)
