@@ -12,11 +12,11 @@ workflow SUMMARY_WF {
 
 // Select/format the output files
 def saveAsSummary(filename){
-    return file.split("/").last()
+    return filename.split("/").last()
 }
 
 process LOG_SUMMARY {
-    publishDir file(params.output_dir) / "summary", mode: "copy", overwrite: true, saveAs: { filename -> saveAsSummary(filename) }
+    publishDir file(params.output_dir) / "log_summary", mode: "copy", overwrite: true, saveAs: { filename -> saveAsSummary(filename) }
     conda "envs/summary.yml"
     secret "OPENAI_API_KEY"
 
