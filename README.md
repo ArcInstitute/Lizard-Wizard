@@ -89,7 +89,7 @@ A spot check is a small run of the pipeline to ensure that the pipeline paramete
 nextflow run main.nf \
   -profile conda,slurm \
   -process.scratch /media/8TBNVME/multiomics/ \
-  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)/lizard-wizard
+  -work-dir /scratch/multiomics/$(whoami)/nextflow-work/lizard-wizard \
   --input /path/to/image/files/ \
   --output /path/to/output/location/ \
   --test_image_count 3
@@ -112,7 +112,7 @@ After running the spot check, you can process the full dataset.
 nextflow run main.nf \
   -profile conda,slurm \
   -process.scratch /media/8TBNVME/multiomics/ \
-  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)/lizard-wizard
+  -work-dir /scratch/multiomics/$(whoami)/nextflow-work/lizard-wizard \
   --input /path/to/image/files/ \
   --output /path/to/output/location/ \
   -resume
@@ -138,7 +138,7 @@ Zeiss 3d:
 ```bash
 nextflow run main.nf \
   -profile dev_zeiss_3d,vm,conda \
-  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)/lizard-wizard
+  -work-dir /scratch/multiomics/$(whoami)/nextflow-work/lizard-wizard
 ```
 
 Molecular devices 3d:
@@ -146,7 +146,7 @@ Molecular devices 3d:
 ```bash
 nextflow run main.nf \
   -profile dev_moldev_3d,vm,conda \
-  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)/lizard-wizard
+  -work-dir /scratch/multiomics/$(whoami)/nextflow-work/lizard-wizard
 ```
 
 Molecular devices 2d:
@@ -154,7 +154,7 @@ Molecular devices 2d:
 ```bash
 nextflow run main.nf \
   -profile dev_moldev_2d,vm,conda \
-  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)/lizard-wizard
+  -work-dir /scratch/multiomics/$(whoami)/nextflow-work/lizard-wizard
 ```
 
 ### Slurm runs
@@ -165,7 +165,7 @@ An example of processing Zeiss 3d images on the cluster:
 nextflow run main.nf \
   -profile dev_zeiss_3d,conda,slurm \
   -process.scratch /media/8TBNVME/multiomics/ \
-  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)
+  -work-dir /scratch/multiomics/$(whoami)/nextflow-work/lizard-wizard
 ```
 
 # Resources
@@ -214,7 +214,7 @@ Zeiss 3d:
 ```bash
 nextflow run main.nf \
   -profile dev_zeiss_3d,vm,conda \
-  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)/lizard-wizard
+  -work-dir /scratch/multiomics/$(whoami)/nextflow-work/lizard-wizard
 ```
 
 Molecular devices 3d:
@@ -222,7 +222,7 @@ Molecular devices 3d:
 ```bash
 nextflow run main.nf \
   -profile dev_moldev_3d,vm,conda \
-  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)/lizard-wizard
+  -work-dir /scratch/multiomics/$(whoami)/nextflow-work/lizard-wizard
 ```
 
 Molecular devices 2d:
@@ -230,7 +230,7 @@ Molecular devices 2d:
 ```bash
 nextflow run main.nf \
   -profile dev_moldev_2d,vm,conda \
-  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)/lizard-wizard
+  -work-dir /scratch/multiomics/$(whoami)/nextflow-work/lizard-wizard
 ```
 
 ## Slurm runs
@@ -240,14 +240,30 @@ nextflow run main.nf \
   --test_image_count 3 \
   -profile dev_zeiss_3d,conda,slurm \
   -process.scratch /media/8TBNVME/multiomics/ \
-  -work-dir /checkpoint/multiomics/nextflow-work/$(whoami)/lizard-wizard
+  -work-dir /scratch/multiomics/$(whoami)/nextflow-work/lizard-wizard
+```
+
+```bash
+nextflow run main.nf \
+  --test_image_count 3 \
+  -profile dev_moldev_3d,conda,slurm \
+  -process.scratch /media/8TBNVME/multiomics/ \
+  -work-dir /scratch/multiomics/$(whoami)/nextflow-work/lizard-wizard
+```
+
+```bash
+nextflow run main.nf \
+  --test_image_count 3 \
+  -profile dev_moldev_2d,conda,slurm \
+  -process.scratch /media/8TBNVME/multiomics/ \
+  -work-dir /scratch/multiomics/$(whoami)/nextflow-work/lizard-wizard
 ```
 
 ## Data 
 
 ### local
 
-`/large_experiments/multiomics/lizard_wizard`
+`/large_storage/multiomics/lizard_wizard`
 
 ### GCP
 

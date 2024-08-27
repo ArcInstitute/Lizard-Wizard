@@ -34,7 +34,7 @@ parser.add_argument("-M", "--max-lines", type=int, default=5000,
 
 
 # functions
-def summarize_log(log_content: str, client: openai.Client, max_tokens: int=1000) -> str:
+def summarize_log(log_content: str, client: openai.Client, model: str="gpt-4o-mini", max_tokens: int=1000) -> str:
     """
     Use the openai client to summarize the log content.
     Args:
@@ -45,7 +45,7 @@ def summarize_log(log_content: str, client: openai.Client, max_tokens: int=1000)
         str: the LLM-generated summary
     """
     completion = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model=model,
         messages=[
             {"role": "system", "content": "Summarize the following log file content, prioritizing warnings and errors."},
             {"role": "user", "content": log_content}
@@ -133,7 +133,7 @@ def main(args):
         log_content = read_log(log_file, args.max_lines)
         
         # Summarize the log file
-        summary = summarize_log(log_content, openai)
+        summary = summarize_log(log_content, client, model=args.model)
         
         # Write the summary to a file
         outfile_base = os.path.splitext(os.path.basename(log_file))[0] + "_summary.md"
