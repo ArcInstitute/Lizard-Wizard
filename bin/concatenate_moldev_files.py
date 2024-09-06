@@ -165,13 +165,14 @@ def main(args):
     # Group files by their base name
     file_groups = group_tiff_files(tif_files)
     
-    # filtering images by group
+    # Filter images by group
     file_groups = filter_tiff_files(file_groups, args.test_image_nums, args.test_image_count)
 
     # Create a new directory for combined files
     os.makedirs(args.output_dir, exist_ok=True)
 
     # Concat each group of files
+    args.threads = 4 if args.threads > 4 else args.threads   # Limit threads due to memory constraints
     with ThreadPoolExecutor(max_workers=args.threads) as executor:
         # Submit each group of files to the executor
         future_to_base_name = {executor.submit(concatenate_images, base_name, files, args.output_dir): base_name for base_name, files in file_groups.items()}

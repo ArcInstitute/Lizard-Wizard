@@ -343,7 +343,10 @@ def set_all_logger_levels(level=logging.WARNING):
             logger.setLevel(level)
 
 def main(args):
-    # get the frame rate
+    # Set max threads (processes) due to memory limitations
+    args.processes = 8 if args.processes > 8 else args.processes
+
+    # Get the frame rate
     frate = read_frate(args.frate_file)
     logging.info(f"Frame rate set to: {frate}")
 
