@@ -90,8 +90,8 @@ nextflow run main.nf \
   -profile conda,slurm \
   -process.scratch /media/8TBNVME/multiomics/ \
   -work-dir /scratch/multiomics/$(whoami)/nextflow-work/lizard-wizard \
-  --input /path/to/image/files/ \
-  --output /path/to/output/location/ \
+  --input_dir /path/to/image/files/ \
+  --output_dir /path/to/output/location/ \
   --test_image_count 3
 ```
 
@@ -102,7 +102,7 @@ nextflow run main.nf \
 * See `./nextflow.config` for all input parameters (e.g., specifying the input file type).
 * If you are not in the `multiomics` user group (check by running the `groups` command), 
   you will need to change the `-process.scratch` and `-work-dir` paths.
-* **Make sure** to change the `--input` and `--output` paths to the correct locations.
+* **Make sure** to change the `--input_dir` and `--output_dir` paths to the correct locations.
 * Use `--file_type zeiss` if the input files are from the Zeiss microscope.
 * If the data is 2d instead of 3d (default), use `--use_2d true`.
 
@@ -115,16 +115,16 @@ nextflow run main.nf \
   -profile conda,slurm \
   -process.scratch /media/8TBNVME/multiomics/ \
   -work-dir /scratch/multiomics/$(whoami)/nextflow-work/lizard-wizard \
-  --input /path/to/image/files/ \
-  --output /path/to/output/location/ \
+  --input_dir /path/to/image/files/ \
+  --output_dir /path/to/output/location/ \
   -resume
 ```
 
 **Notes:**
 * The `-resume` flag will prevent the need to re-run the samples included in the spot check, 
   since they are already processed.
-  * For this to work, the `--output` directory must be the same as the spot check run.
-* **Make sure** to change the `--input` and `--output` paths to the correct locations.
+  * For this to work, the `--output_dir` directory must be the same as the spot check run.
+* **Make sure** to change the `--input_dir` and `--output_dir` paths to the correct locations.
 
 
 ## Test runs
@@ -197,7 +197,7 @@ nextflow run main.nf \
 ## Output
 
 * Processed images and other files
-* Written to the `--output` directory
+* Written to the `--output_dir` directory
 
 ***
 
