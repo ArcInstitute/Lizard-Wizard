@@ -29,6 +29,7 @@ def saveAsBase(filename){
 process CALC_DFF_F0 {
     publishDir file(params.output_dir) / "caiman_calc-dff-f0", mode: "copy", overwrite: true, saveAs: { filename -> saveAsBase(filename) }
     conda "envs/caiman.yml"
+    label "process_low_mem"
    
     input:
     path cnm_A
@@ -66,7 +67,7 @@ def saveAsCaiman(filename){
 process CAIMAN {
     publishDir file(params.output_dir) / "caiman", mode: "copy", overwrite: true, saveAs: { filename -> saveAsCaiman(filename) }
     conda "envs/caiman.yml"
-    label "process_medium"
+    label "process_highest"
 
     input:
     path img_orig

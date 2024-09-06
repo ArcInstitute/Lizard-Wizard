@@ -6,7 +6,7 @@ workflow SUMMARY_WF {
     main:
     // summarize logs
     if("${secrets.OPENAI_API_KEY}" != "null"){
-        LOG_SUMMARY(ch_mask_log, ch_caiman_log)
+        LOG_SUMMARY(ch_mask_log.collect(), ch_caiman_log.collect())
     }
 }
 

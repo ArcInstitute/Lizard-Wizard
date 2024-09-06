@@ -47,7 +47,7 @@ workflow INPUT_WF {
 // Load and concatenate Molecular Devices images
 process MOLDEV_CONCAT {
     conda "envs/cellpose.yml"
-    label "process_low"
+    label "process_high"
 
     output:
     path "tiff_combined/*.tif",    emit: img
