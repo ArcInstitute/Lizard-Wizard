@@ -103,6 +103,8 @@ nextflow run main.nf \
 * If you are not in the `multiomics` user group (check by running the `groups` command), 
   you will need to change the `-process.scratch` and `-work-dir` paths.
 * **Make sure** to change the `--input` and `--output` paths to the correct locations.
+* Use `--file_type zeiss` if the input files are from the Zeiss microscope.
+* If the data is 2d instead of 3d (default), use `--use_2d true`.
 
 ## Example Full Run
 
@@ -123,6 +125,7 @@ nextflow run main.nf \
   since they are already processed.
   * For this to work, the `--output` directory must be the same as the spot check run.
 * **Make sure** to change the `--input` and `--output` paths to the correct locations.
+
 
 ## Test runs
 
@@ -199,13 +202,6 @@ nextflow run main.nf \
 ***
 
 # Dev
-
-## TODO
-
-[ ] Update Caiman (stop using github release)
-[ ] Add Benchling data retrieval
-  * [example notebook](https://arcinstitute.benchling.com/arcinstitute/f/lib_mZ19r5Dn-seeding-and-maintenance-of-[…]ot-1920-neurons-and-primary-astrocytes-hpcs-repeat/edit)
-    * `EXP24000373`
 
 ## Local runs
 

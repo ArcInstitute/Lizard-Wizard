@@ -7,6 +7,7 @@ import os
 import sys
 import argparse
 ## 3rd party
+import markdown
 import openai
 
 
@@ -109,7 +110,35 @@ def read_log(infile: str, max_lines: int) -> str:
         content.append(f'... (truncated to {max_lines} lines)')
     return "\n".join(content)
 
-# functions
+def md2html(markdown_text: str, outfile: str):
+    """
+    Convert markdown to html.
+    Args:
+        markdown_text: markdown content
+        outfile: output file
+    """
+    # convert markdown to html
+    html = markdown.markdown(markdown_text, tab_length=2)
+
+    # Define custom CSS (you can load this from a file too)
+    css = """
+<style>
+    body { font-family: Arial, sans-serif; line-height: 1.4; }
+    h1, h2, h3 { border-bottom: 2px solid #ccc; padding-bottom: 2px; margin-top: 10px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    table, th, td { border: 1px solid #ddd; padding: 8px; }
+    th { background-color: #f2f2f2; }
+    ol { margin-left: 6px; }
+    ul { margin-left: 6px; }
+</style>
+"""
+    # Write out the HTML and CSS together
+    with open(outfile, "w") as outF:
+        outF.write(f"{css}\n{html}")
+
+    # Status
+    print(f"  HTML written to {outfile}", file=sys.stderr)
+
 def main(args):
     # Output directory
     os.makedirs(args.output_dir, exist_ok=True)
@@ -151,10 +180,14 @@ def main(args):
     print("Summarizing all log file summaries", file=sys.stderr)
     summary = summarize_log(all_summaries, openai, max_tokens=1500)
     outfile = os.path.join(args.output_dir, "final_summary.md")
-    with open(outfile, "w") as f:
-        f.write(summary + "\n")
+    with open(outfile, "w") as outF:
+        outF.write(summary + "\n")
     print(f"  Summary written to {outfile}", file=sys.stderr)
 
+    # Convert to html
+    print("Converting final summary to HTML", file=sys.stderr)
+    outfile = os.path.join(args.output_dir, "final_summary.html")
+    md2html(summary, outfile)
     
 ## script main
 if __name__ == "__main__":

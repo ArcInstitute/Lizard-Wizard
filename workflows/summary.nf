@@ -25,7 +25,8 @@ process LOG_SUMMARY {
     path caiman_log
 
     output:
-    path "output/*.md"
+    path "output/*.md",   emit: md
+    path "output/*.html", emit: html
 
     script:
     """
