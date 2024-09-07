@@ -107,7 +107,9 @@ def load_image_data_moldev_concat(fname: str) -> tuple:
     # Load metadata from the Tiff file
     metadata = load_tiff_metadata(fname)
     image_description = metadata.get('ImageDescription')
-                    
+
+    # Extract the exposure information from the image description
+    exposure_units,frate = None,None
     if image_description:
         # Extract the inner XML content
         match = re.search(r'<prop id=\\"Description\\" type=\\"string\\" value=\\"([^"]+)\\"', image_description)
@@ -119,8 +121,12 @@ def load_image_data_moldev_concat(fname: str) -> tuple:
                 frate = int(exposure_match.group(1))
                 exposure_units = exposure_match.group(4)
 
+    # Raise an error if exposure information is not found
+    if exposure_units is None or frate is None:
+        raise ValueError(f"Exposure information not found in metadata for file {fname}.")
+
     # Check and print a warning if exposure units are not in msec
-    if exposure_units and exposure_units.lower() not in ['msec', 'ms']:
+    if exposure_units.lower() not in ['msec', 'ms']:
         logging.warning(f"Exposure units for file {fname} are '{exposure_units}', not 'msec'.")
 
     # Return the image data and the frame rate

@@ -47,7 +47,7 @@ process MASK {
     # set local models path
     export CELLPOSE_LOCAL_MODELS_PATH=models
     # run cellpose
-    mask.py --file-type ${params.file_type} ${use_2d} ${img_file} > "${img_basename}.log" 2>&1
+    mask.py --file-type ${params.file_type} ${use_2d} ${img_file} > ${img_basename}.log 2>&1
     """
 
     stub:

@@ -1,12 +1,19 @@
 workflow SUMMARY_WF {
     take:
+    ch_grp_log
+    ch_cat_log
     ch_mask_log
     ch_caiman_log
 
     main:
     // summarize logs
     if("${secrets.OPENAI_API_KEY}" != "null"){
-        LOG_SUMMARY(ch_mask_log.collect(), ch_caiman_log.collect())
+        LOG_SUMMARY(
+            ch_grp_log.collect(),
+            ch_cat_log.collect(),
+            ch_mask_log.collect(), 
+            ch_caiman_log.collect()
+        )
     }
 }
 
@@ -21,6 +28,8 @@ process LOG_SUMMARY {
     secret "OPENAI_API_KEY"
 
     input:
+    path grp_log
+    path cat_log
     path mask_log
     path caiman_log
 
@@ -30,7 +39,7 @@ process LOG_SUMMARY {
 
     script:
     """
-    summarize_logs.py --model $params.llm $mask_log $caiman_log
+    summarize_logs.py --model $params.llm $grp_log $cat_log $mask_log $caiman_log
     """
 
     stub:

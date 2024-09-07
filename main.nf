@@ -7,11 +7,10 @@ include { SUMMARY_WF } from './workflows/summary.nf'
 // Main workflow
 workflow {
     // Create the image channel
-    ch_img = INPUT_WF()
-
+    INPUT_WF()
     
     // Create the mask channel
-    MASK_WF(ch_img)
+    MASK_WF(INPUT_WF.out.img)
 
     // Run Caiman
     CAIMAN_WF(
@@ -22,6 +21,8 @@ workflow {
 
     // Summarize log files
     SUMMARY_WF(
+        INPUT_WF.out.grp_log,
+        INPUT_WF.out.cat_log,
         MASK_WF.out.mask_log,
         CAIMAN_WF.out.caiman_log
     )

@@ -4,6 +4,7 @@
 from __future__ import print_function
 import os
 import re
+import gc
 import logging
 import argparse
 import xml.etree.ElementTree as ET
@@ -24,17 +25,20 @@ class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter,
 desc = "Concatenates related TIFF files from MolDev"
 epi = """DESCRIPTION:
     The script performs the following steps:
-    1. Creates a new directory for storing the combined TIFF files.
-    2. Checks if any combined files already exist to avoid reprocessing.
-    3. Concatenates the image data from related TIFF files and saves the combined images.
-    4. Preserves metadata from the first file in each group during the save process.
+    1. Groups related TIFF files based on their base names.
+    2. Optionally filters the groups based on the provided test_image_nums or test_image_count.
+    3. Creates a csv file with the file groups.
 """
 parser = argparse.ArgumentParser(description=desc, epilog=epi,
                                  formatter_class=CustomFormatter)
-parser.add_argument('img_files', type=str, nargs='+',
-                    help='Image files')
-parser.add_argument('-o', '--output', type=str, default='combined.tif',
-                    help='Output image file')
+parser.add_argument('input_dir', type=str, 
+                    help='Path to the directory containing TIFF files')
+parser.add_argument('--output', type=str, default="combined.tif",
+                    help='Output file name')
+parser.add_argument('--test-image-nums', type=str, default=None,
+                   help='Which images to process (comma-delim list of indices)')
+parser.add_argument('--test-image-count', type=int, default=0,
+                   help='Number of randomly selected images to process')
 parser.add_argument('--version', action='version', version='0.1.0')
 
 def find_tiff_files(input_dir: str) -> list:
@@ -52,6 +56,9 @@ def find_tiff_files(input_dir: str) -> list:
         for file in files:
             if file.endswith('.tif'):
                 tif_files.append(os.path.join(root, file))
+    # raise an error if no files were found
+    if len(tif_files) == 0:
+        raise ValueError(f"No TIFF files found in {input_dir}")
     logging.info(f"  Found {len(tif_files)} TIFF files")
     return tif_files
 
@@ -63,13 +70,13 @@ def group_tiff_files(tif_files: list) -> dict:
     Returns:
         Dictionary of related TIFF files grouped by their base name
     """
-    # group files by basename
+    # Group files by basename
     logging.info("Grouping files by base name")
     file_groups = {}
     pattern = re.compile(r"(.+?)(-file\d+)?\.tif$")
     for filename in tif_files:
         # Match the filename against the pattern
-        match = pattern.match(filename)
+        match = pattern.match(os.path.basename(filename))
         if match:
             # Extract the base name and part suffix
             base_name, part_suffix = match.groups()
@@ -95,58 +102,40 @@ def filter_tiff_files(file_groups: dict, test_image_nums: str, test_image_count:
     if test_image_count > 0:
         # randomly select N image groups
         logging.info(f"Selecting {test_image_count} random image groups")
+        if test_image_count > len(file_groups):
+            raise ValueError("test_image_count is greater than the number of image groups")
         group_ids = np.random.choice(list(file_groups.keys()), test_image_count, replace=False)
     elif test_image_nums is not None:
         # select specific image groups to process
         logging.info("Selecting specific image groups")
         test_image_nums = [int(i) for i in test_image_nums.split(',')]
         group_ids = list(file_groups.keys())
-        group_ids = [group_ids[i] for i in test_image_nums if i < len(group_ids)]
+        try:
+            group_ids = [group_ids[i] for i in test_image_nums]
+        except IndexError:
+            raise ValueError("Invalid test_image_nums provided")
     # group files by basename
     if group_ids is not None:
         file_groups = {k: v for k, v in file_groups.items() if k in group_ids}
     return file_groups
 
-def concatenate_images(files: list, output_file: str) -> None:
-    """
-    Concatenate the image data from related TIFF files and save the combined image
-    Args:
-        files: List of TIFF file paths
-        output_dir: Directory path for storing the combined
-    """
-    # Status
-    logging.info(f"Concatenating {len(files)} images to: {output_file}")
-
-    # Sort files to ensure they are concatenated in the correct order
-    files.sort()
-
-    # Load images and concatenate
-    combined_image = np.concatenate([tifffile.imread(f) for f in files], axis=0)  # Change axis if needed for your images
-    logging.info(f"  Combined image shape: {combined_image.shape}")
-
-    # Read metadata from the first image
-    with tifffile.TiffFile(files[0]) as tif:
-        metadata = tif.pages[0].tags
-
-        # Ensure ImageDescription is valid XML
-        image_description = metadata.get('ImageDescription', None)
-        if image_description:
-            try:
-                ET.fromstring(image_description.value)
-            except ET.ParseError:
-                logging.warning(f"Invalid XML in ImageDescription for file {files[0]}. Fixing it.")
-                image_description.value = "<MetaData></MetaData>"
-
-        # Remove StripOffsets tag to avoid issues with saving
-        metadata = {tag.name: tag.value for tag in metadata.values() if tag.name != 'StripOffsets'}
-
-    # Save the combined image with metadata
-    with tifffile.TiffWriter(output_file, bigtiff=True) as tif_writer:
-        tif_writer.write(combined_image, metadata=metadata)
-    logging.info(f"  Saved combined image: {output_file}")
-
 def main(args):
-    concatenate_images(args.img_files, args.output)
+    # Find all TIFF files in the input directory
+    tif_files = find_tiff_files(args.input_dir)
+
+    # Group files by their base name
+    file_groups = group_tiff_files(tif_files)
+    
+    # Filter images by group
+    file_groups = filter_tiff_files(
+        file_groups, args.test_image_nums, args.test_image_count
+    )
+
+    # Print the groups as csv
+    print("group_name,file_path")
+    for group_name, files in file_groups.items():
+        for file_path in files:
+            print(f"{group_name},{file_path}")
 
 ## script main
 if __name__ == '__main__':
