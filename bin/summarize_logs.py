@@ -6,10 +6,10 @@ import re
 import os
 import sys
 import argparse
+import concurrent.futures
 ## 3rd party
 import markdown
 import openai
-
 
 # argparse
 class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter,
@@ -32,7 +32,8 @@ parser.add_argument("-m", "--model", type=str, default="gpt-4o-mini",
                     help="openai model to use.")
 parser.add_argument("-M", "--max-lines", type=int, default=5000,
                     help="Max lines to summarize.")
-
+parser.add_argument("-t", "--threads", type=int, default=1,
+                    help="Number of threads to use.")
 
 # functions
 def summarize_log(log_content: str, client: openai.Client, model: str="gpt-4o-mini", max_tokens: int=1000) -> str:
@@ -139,6 +140,28 @@ def md2html(markdown_text: str, outfile: str):
     # Status
     print(f"  HTML written to {outfile}", file=sys.stderr)
 
+def process_log_file(log_file: str, output_dir: str, client: openai.Client,
+                     model: str="gpt-4o-mini", max_lines: int=5000) -> str:
+    print(f"Processing {log_file}", file=sys.stderr)
+
+    # Read the log file
+    log_content = read_log(log_file, args.max_lines)
+        
+    # Summarize the log file
+    summary = summarize_log(log_content, client, model=args.model)
+        
+    # Write the summary to a file
+    outfile_base = os.path.splitext(os.path.basename(log_file))[0] + "_summary.md"
+    outfile = os.path.join(args.output_dir,  outfile_base)
+    with open(outfile, "w") as f:
+        log_file_basename = os.path.basename(log_file)
+        f.write(f"#-- Log file: {log_file_basename}  --#\n\n")
+        f.write(summary + "\n\n")
+    print(f"  Summary written to {outfile}", file=sys.stderr)
+
+    # Return summary text
+    return f"--- {outfile_base} ---\n" + summary + "\n\n"
+
 def main(args):
     # Output directory
     os.makedirs(args.output_dir, exist_ok=True)
@@ -153,28 +176,22 @@ def main(args):
     # Create openai client
     client = openai.Client()
     
-    # Process each log file
+    # Process each log file in parallel
     all_summaries = ""
-    for log_file in args.log_file:
-        print(f"Processing {log_file}", file=sys.stderr)
-
-        # Read the log file
-        log_content = read_log(log_file, args.max_lines)
-        
-        # Summarize the log file
-        summary = summarize_log(log_content, client, model=args.model)
-        
-        # Write the summary to a file
-        outfile_base = os.path.splitext(os.path.basename(log_file))[0] + "_summary.md"
-        outfile = os.path.join(args.output_dir,  outfile_base)
-        with open(outfile, "w") as f:
-            log_file_basename = os.path.basename(log_file)
-            f.write(f"#-- Log file: {log_file_basename}  --#\n\n")
-            f.write(summary + "\n\n")
-        print(f"  Summary written to {outfile}", file=sys.stderr)
-
-        # Append to summaries
-        all_summaries += f"--- {outfile_base} ---\n" + summary + "\n\n"
+    with concurrent.futures.ThreadPoolExecutor(max_workers=args.threads) as executor:
+        # Process each log file
+        futures = []
+        for log_file in args.log_file:
+            futures.append(
+                executor.submit(
+                    process_log_file, 
+                    log_file, args.output_dir, client, 
+                    model=args.model, max_lines=args.max_lines
+                )
+            )
+        # Collect results
+        for future in concurrent.futures.as_completed(futures):
+            all_summaries += future.result()
 
     # summarize all summaries
     print("Summarizing all log file summaries", file=sys.stderr)
