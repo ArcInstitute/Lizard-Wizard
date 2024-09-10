@@ -57,7 +57,10 @@ process CALC_DFF_F0 {
 
 // Select/format the output files
 def saveAsCaiman(filename){
-    if (filename.endsWith('_cnm_A.npy') || filename.endsWith('_cnm_idx.npy') || filename.endsWith('.log')) {
+    if (filename.endsWith('_cnm_A.npy') || 
+        filename.endsWith('_cnm_idx.npy') || 
+        filename.endsWith('.log') || 
+        filename.endsWith('.png')) {
         return saveAsBase(filename)
     }
     return null
@@ -80,6 +83,8 @@ process CAIMAN {
     path img_masks,                     emit: img_masks
     path "caiman_output/*_cnm_A.npy",   emit: cnm_A
     path "caiman_output/*_cnm_idx.npy", emit: cnm_idx
+    path "caiman_output/*_correlation-pnr.png",         emit: corr_pnr
+    path "caiman_output/*_histogram-pnr-cn-filter.png", emit: histo_pnr
     path "${img_masked.baseName}.log",  emit: log
 
     script:
@@ -91,7 +96,19 @@ process CAIMAN {
     cp $img_masked \${CAIMAN_DATA}/temp/
 
     # run the caiman process
-    caiman_run.py -p $task.cpus $frate $img_masked > "${img_masked_basename}.log" 2>&1
+    caiman_run.py -p $task.cpus \
+      --decay_time $params.decay_time \
+      --gSig $params.gSig \
+      --rf $params.rf \
+      --min_SNR $params.min_SNR \
+      --r_values_min $params.r_values_min \
+      --tsub $params.tsub \
+      --ssub $params.ssub \
+      --p_th $params.p_th \
+      --min_corr $params.min_corr \
+      --min_pnr $params.min_pnr \
+      --ring_size_factor $params.ring_size_factor \
+      $frate $img_masked > "${img_masked_basename}.log" 2>&1
     """
 
     stub:
