@@ -24,7 +24,8 @@ workflow {
         INPUT_WF.out.grp_log,
         INPUT_WF.out.cat_log,
         MASK_WF.out.mask_log,
-        CAIMAN_WF.out.caiman_log
+        CAIMAN_WF.out.caiman_log,
+        CAIMAN_WF.out.calc_dff_f0_log
     )
 }
 

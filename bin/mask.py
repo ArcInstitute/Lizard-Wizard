@@ -200,6 +200,7 @@ def format_masks(im: np.ndarray, im_min: np.ndarray, masks: np.ndarray,
     logging.info(f"Masked image saved to {outfile}")
 
 def main(args):
+    logging.info("Starting mask.py...")
     # Set up the cellpose logger
     logger = io.logger_setup()
 

@@ -74,14 +74,14 @@ process MOLDEV_CONCAT {
     script:
     imagePaths = imagePaths.join(" ") // Concatenate the image path list
     """
-    concatenate_moldev_files.py \
-      --output ${baseName}_full.tif \
-      $imagePaths > ${baseName}_moldev-cat.log 2>&1
+    concatenate_moldev_files.py \\
+      --output ${baseName}_full.tif \\
+      $imagePaths > "${baseName}_moldev-cat.log" 2>&1
     """
 
     stub:
     """
-    touch ${baseName}_full.tif ${baseName}_moldev-cat.log
+    touch ${baseName}_full.tif "${baseName}_moldev-cat.log"
     """
 }
 

@@ -42,9 +42,8 @@ parser.add_argument("-o", "--output-dir", type=str, default='output',
 parser.add_argument("-f", "--file-type", type=str, default='zeiss',
                     choices = ['moldev', 'zeiss'], 
                     help="Input file type")
-parser.add_argument("-t", "--threshold-percentile", type=float, default=0.75,
-                    help="Threshold percentile for image processing")
-
+parser.add_argument('--p_th', type=float, default=0.75,
+                    help='Threshold percentile for image processing')
 
 # functions
 def read_img_file(img_file: str, file_type: str) -> tuple:
@@ -85,9 +84,14 @@ def read_img_file(img_file: str, file_type: str) -> tuple:
     else:
         raise ValueError(f"Unknown file type: {file_type}")
 
+    # stats
+    logging.info(f"Frame rate: {frate}")
+    logging.info(f"Image shape: {im_shape}")
+    logging.info(f"Image size: {im_sz}")
     return im, frate, im_shape, im_sz, im_avg
 
 def main(args):
+    logging.info("Starting calc_dff_f0.py...")
     # output 
     ## basename
     base_fname = os.path.splitext(os.path.basename(args.img_file))[0]
@@ -106,6 +110,7 @@ def main(args):
     # Check if the mask file is provided
     logging.info(f"Reading image masks file: {args.img_masks_file}")
     masks = check_and_load_file(args.img_masks_file)
+    logging.info(f"  Masks shape: {masks.shape}")
 
     # Calc the background intensity
     if masks is not None:
@@ -118,6 +123,7 @@ def main(args):
     # Load additional data (matrix A)
     logging.info(f"Reading matrix A file: {args.cnm_A_file}")
     A = check_and_load_file(args.cnm_A_file)
+    logging.info(f"  Matrix A shape: {A.shape}")
 
     # Check whether A is blank
     if A.shape[1] == 0:
@@ -129,15 +135,14 @@ def main(args):
 
     # Initialize storage for processed images
     im_st = np.zeros((A.shape[1], im_sz[0], im_sz[1]), dtype='uint16')
-    p_th = args.threshold_percentile
-    logging.info("Generating im_st with p_th of {p_th}")
+    logging.info("Generating im_st with p_th of {args.p_th}")
     dict_mask = {}
     
     # Generate im_st by thresholding the components in A
     for i in range(A.shape[1]):
         Ai = np.copy(A[:, i])
         Ai = Ai[Ai > 0]
-        thr = np.percentile(Ai, p_th)
+        thr = np.percentile(Ai, args.p_th)
         imt = np.reshape(A[:, i], im_sz, order='F')
         im_thr = np.copy(imt)
         im_thr[im_thr < thr] = 0

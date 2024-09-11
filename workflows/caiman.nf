@@ -10,6 +10,7 @@ workflow CAIMAN_WF {
 
     // run calc_dff_f0
     CALC_DFF_F0(
+        ch_img_masked,
         CAIMAN.out.cnm_A, 
         CAIMAN.out.cnm_idx,
         CAIMAN.out.img_orig,
@@ -18,6 +19,7 @@ workflow CAIMAN_WF {
 
     emit:
     caiman_log = CAIMAN.out.log
+    calc_dff_f0_log = CALC_DFF_F0.out.log
 }
 
 // Helper function to format the output file name
@@ -32,26 +34,29 @@ process CALC_DFF_F0 {
     label "process_low_mem"
    
     input:
+    tuple path(frate), path(img_masked)
     path cnm_A
     path cnm_idx
     path img_orig
     path img_masks
-
+    
     output:
-    path "output/*"
+    path "output/*",                                emit: output
+    path "${img_masked.baseName}_calc-diff-f0.log", emit: log
 
     script:
     """
-    calc_dff_f0.py \
-      --file-type ${params.file_type} \
-      --threshold-percentile ${params.p_th} \
-      $cnm_A $cnm_idx $img_orig $img_masks
+    calc_dff_f0.py \\
+      --file-type ${params.file_type} \\
+      --p_th ${params.p_th} \\
+      $cnm_A $cnm_idx $img_orig $img_masks \\
+      > "${img_masked.baseName}_calc-diff-f0.log" 2>&1
     """
     
     stub:
     """
     mkdir -p output
-    touch output/blank.txt
+    touch output/blank.txt ${img_masked.baseName}_calc-diff-f0.log
     """
 }
 
@@ -85,10 +90,9 @@ process CAIMAN {
     path "caiman_output/*_cnm_idx.npy", emit: cnm_idx
     path "caiman_output/*_correlation-pnr.png",         emit: corr_pnr
     path "caiman_output/*_histogram-pnr-cn-filter.png", emit: histo_pnr
-    path "${img_masked.baseName}.log",  emit: log
+    path "${img_masked.baseName}_caiman.log",           emit: log
 
     script:
-    def img_masked_basename = img_masked.baseName
     """
     # set the input paths
     export CAIMAN_DATA=caiman_data
@@ -96,25 +100,26 @@ process CAIMAN {
     cp $img_masked \${CAIMAN_DATA}/temp/
 
     # run the caiman process
-    caiman_run.py -p $task.cpus \
-      --decay_time $params.decay_time \
-      --gSig $params.gSig \
-      --rf $params.rf \
-      --min_SNR $params.min_SNR \
-      --r_values_min $params.r_values_min \
-      --tsub $params.tsub \
-      --ssub $params.ssub \
-      --p_th $params.p_th \
-      --min_corr $params.min_corr \
-      --min_pnr $params.min_pnr \
-      --ring_size_factor $params.ring_size_factor \
-      $frate $img_masked > "${img_masked_basename}.log" 2>&1
+    caiman_run.py -p $task.cpus \\
+      --decay_time $params.decay_time \\
+      --gSig $params.gSig \\
+      --rf $params.rf \\
+      --min_SNR $params.min_SNR \\
+      --r_values_min $params.r_values_min \\
+      --tsub $params.tsub \\
+      --ssub $params.ssub \\
+      --min_corr $params.min_corr \\
+      --min_pnr $params.min_pnr \\
+      --ring_size_factor $params.ring_size_factor \\
+      $frate $img_masked > "${img_masked.baseName}_caiman.log" 2>&1
     """
 
     stub:
     """
     mkdir -p caiman_output
-    touch caiman_output/${img_masked.baseName}_cnm_A.npy caiman_output/${img_masked.baseName}_cnm_idx.npy ${img_masked.baseName}.log
+    touch caiman_output/${img_masked.baseName}_cnm_A.npy \\
+      caiman_output/${img_masked.baseName}_cnm_idx.npy \\
+      ${img_masked.baseName}_caiman.log
     """
 }
 

@@ -114,7 +114,7 @@ def concatenate_images(files: list, output_file: str) -> None:
         files: List of TIFF file paths
         output_dir: Directory path for storing the combined
     """
-    # Status
+    # Status 
     logging.info(f"Concatenating {len(files)} images to: {output_file}")
 
     # Sort files to ensure they are concatenated in the correct order
@@ -146,6 +146,7 @@ def concatenate_images(files: list, output_file: str) -> None:
     logging.info(f"  Saved combined image: {output_file}")
 
 def main(args):
+    logging.info("Starting concatenate_moldev_files.py...")
     concatenate_images(args.img_files, args.output)
 
 ## script main

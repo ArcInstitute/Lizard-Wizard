@@ -27,16 +27,21 @@ parser.add_argument("log_file", type=str, nargs="+",
                     help="log file to summarize.")
 parser.add_argument("-o", "--output-dir", type=str, default="output",
                     help="Output directory.")
+parser.add_argument("-O", "--output-prefix", type=str, default="final_summary",
+                    help="Output directory.")
 parser.add_argument("-m", "--model", type=str, default="gpt-4o-mini",
                     choices=["gpt-4o-mini", "gpt-4o"],
                     help="openai model to use.")
 parser.add_argument("-M", "--max-lines", type=int, default=5000,
                     help="Max lines to summarize.")
+parser.add_argument("-f", "--final-summary", action="store_true", default=False,
+                    help="Summarize all summaries.")
 parser.add_argument("-t", "--threads", type=int, default=1,
                     help="Number of threads to use.")
 
 # functions
-def summarize_log(log_content: str, client: openai.Client, model: str="gpt-4o-mini", max_tokens: int=1000) -> str:
+def summarize_log(log_content: str, client: openai.Client, model: str="gpt-4o-mini", 
+                  max_tokens: int=1000, final_summary: bool=False) -> str:
     """
     Use the openai client to summarize the log content.
     Args:
@@ -46,14 +51,28 @@ def summarize_log(log_content: str, client: openai.Client, model: str="gpt-4o-mi
     Returns:
         str: the LLM-generated summary
     """
+    # system prompt
+    if final_summary:
+        system_prompt = "Create a final summary report for the following markdown summary reports."
+        "Each summary report provided to you is a summary of log files for various steps of a bioinformatics pipeline."
+        "Be sure to clearly describe any errors or warnings noted in any of the summary reports."
+        "Format the final report in markdown with headers for each step in the pipeline."
+    else:
+        system_prompt = "Summarize the following log file content."
+        "Each log file is from a step in a bioinformatics pipeline."
+        "Note the name of the pipeline step in the summary."
+        "Format the summary in markdown."
+    system_prompt += "Prioritize errors and warnings. Generally, do not note the time of any log entry in your report."
+    # generate completion
     completion = client.chat.completions.create(
         model=model,
         messages=[
-            {"role": "system", "content": "Summarize the following log file content, prioritizing warnings and errors."},
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": log_content}
         ],
         max_tokens=max_tokens
     )
+    # return the completion content
     return completion.choices[0].message.content
 
 def write_blank_files(log_files: list, output_dir: str):
@@ -125,7 +144,7 @@ def md2html(markdown_text: str, outfile: str):
     css = """
 <style>
     body { font-family: Arial, sans-serif; line-height: 1.4; }
-    h1, h2, h3 { border-bottom: 2px solid #ccc; padding-bottom: 2px; margin-top: 10px; }
+    h1, h2, h3 { padding-bottom: 2px; margin-top: 10px; }
     table { border-collapse: collapse; width: 100%; margin-top: 10px; }
     table, th, td { border: 1px solid #ddd; padding: 8px; }
     th { background-color: #f2f2f2; }
@@ -141,18 +160,19 @@ def md2html(markdown_text: str, outfile: str):
     print(f"  HTML written to {outfile}", file=sys.stderr)
 
 def process_log_file(log_file: str, output_dir: str, client: openai.Client,
-                     model: str="gpt-4o-mini", max_lines: int=5000) -> str:
+                     model: str="gpt-4o-mini", max_lines: int=5000, 
+                     final_summary: bool=False) -> str:
     print(f"Processing {log_file}", file=sys.stderr)
 
     # Read the log file
-    log_content = read_log(log_file, args.max_lines)
+    log_content = read_log(log_file, max_lines)
         
     # Summarize the log file
-    summary = summarize_log(log_content, client, model=args.model)
+    summary = summarize_log(log_content, client, model=model, final_summary=final_summary)
         
     # Write the summary to a file
     outfile_base = os.path.splitext(os.path.basename(log_file))[0] + "_summary.md"
-    outfile = os.path.join(args.output_dir,  outfile_base)
+    outfile = os.path.join(output_dir,  outfile_base)
     with open(outfile, "w") as f:
         log_file_basename = os.path.basename(log_file)
         f.write(f"#-- Log file: {log_file_basename}  --#\n\n")
@@ -178,32 +198,43 @@ def main(args):
     
     # Process each log file in parallel
     all_summaries = ""
-    with concurrent.futures.ThreadPoolExecutor(max_workers=args.threads) as executor:
-        # Process each log file
-        futures = []
+    regex = re.compile(r"_summary.md$")
+    if args.final_summary:
         for log_file in args.log_file:
-            futures.append(
-                executor.submit(
-                    process_log_file, 
-                    log_file, args.output_dir, client, 
-                    model=args.model, max_lines=args.max_lines
+            with open(log_file) as inF:
+                step_name = regex.sub("", os.path.basename(log_file))
+                all_summaries += f"#-- Log file: {step_name}  --#\n\n"
+                all_summaries += inF.read()
+                all_summaries += "\n\n"
+    else:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=args.threads) as executor:
+            # Process each log file
+            futures = []
+            for log_file in args.log_file:
+                futures.append(
+                   executor.submit(
+                        process_log_file, 
+                        log_file, args.output_dir, client, 
+                        model=args.model, 
+                        max_lines=args.max_lines,
+                        final_summary=args.final_summary
+                    )
                 )
-            )
-        # Collect results
-        for future in concurrent.futures.as_completed(futures):
-            all_summaries += future.result()
+            # Collect results
+            for future in concurrent.futures.as_completed(futures):
+                all_summaries += future.result()
 
     # summarize all summaries
     print("Summarizing all log file summaries", file=sys.stderr)
     summary = summarize_log(all_summaries, openai, max_tokens=1500)
-    outfile = os.path.join(args.output_dir, "final_summary.md")
+    outfile = os.path.join(args.output_dir, f"{args.output_prefix}.md")
     with open(outfile, "w") as outF:
         outF.write(summary + "\n")
     print(f"  Summary written to {outfile}", file=sys.stderr)
 
     # Convert to html
     print("Converting final summary to HTML", file=sys.stderr)
-    outfile = os.path.join(args.output_dir, "final_summary.html")
+    outfile = os.path.join(args.output_dir, f"{args.output_prefix}.html")
     md2html(summary, outfile)
     
 ## script main

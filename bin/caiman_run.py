@@ -38,9 +38,9 @@ parser.add_argument('frate_file', type=str,
                     help='File containing the frame rate')
 parser.add_argument('img_file', type=str,
                     help='Directory path containing the image files')
-parser.add_argument('--output-dir', type=str, default="caiman_output",
+parser.add_argument('--output_dir', type=str, default="caiman_output",
                     help='Output directory')
-parser.add_argument('--decay-time', type=float, default=0.5,
+parser.add_argument('--decay_time', type=float, default=0.5,
                     help='Average decay time of a transient')
 parser.add_argument('--gSig', type=int, default=6,
                     help='Size of the Gaussian filter')
@@ -54,15 +54,13 @@ parser.add_argument('--tsub', type=int, default=2,
                     help='Temporal subsampling factor')
 parser.add_argument('--ssub', type=int, default=2,
                     help='Spatial subsampling factor')
-parser.add_argument('--p_th', type=float, default=0.75,
-                    help='Threshold percentile for image processing')
 parser.add_argument('--min_corr', type=float, default=0.8,
                     help='Min peak value from correlation image')
 parser.add_argument('--min_pnr', type=float, default=5.0,
                     help='Min peak to noise ration from PNR image')
 parser.add_argument('--ring_size_factor', type=float, default=1.4,
                     help='Radius of ring is gSig*ring_size_factor')
-parser.add_argument('--motion-correct', action='store_true', default=False,
+parser.add_argument('--motion_correct', action='store_true', default=False,
                     help = 'Perform motion correction')
 parser.add_argument('-p', '--processes', type=int, default=1,
                     help='Number of processes to use')
@@ -198,7 +196,7 @@ def plot_correlations(cn_filter, pnr, base_fname: str, output_dir: str) -> None:
 def run_caiman(im, frate: float, decay_time: float, gSig: int, rf: int, 
                tsub: int, ssub: int, min_corr: float, min_pnr: float, 
                min_SNR: float, r_values_min: float, ring_size_factor: int, 
-               n_processes: int,  motion_correct=False):
+               n_processes: int,  motion_correct: bool=False):
     """
     Run the CaImAn CNMF algorithm on the given image data.
     Args:
@@ -212,6 +210,8 @@ def run_caiman(im, frate: float, decay_time: float, gSig: int, rf: int,
         min_corr: min peak value from correlation image
         min_pnr: min peak to noise ration from PNR image
         min_SNR: min peak to noise ration from PNR image
+        r_values_min: min peak value from correlation image
+        ring_size_factor: radius of ring is gSig*ring_size_factor
         n_processes: number of processes to use
         motion_correct: flag for performing motion correction 
     Returns:
@@ -226,16 +226,18 @@ def run_caiman(im, frate: float, decay_time: float, gSig: int, rf: int,
     Ain = None                   # possibility to seed with predetermined binary masks
     gSiz = 4 * gSig + 1          # average diameter of a neuron, in general 4*gSig+1
     stride_cnmf = gSiz + 5       # overlap between patches (pixels) keep >gSiz
-    merge_thresh = .7            # merging threshold, max correlation allowed
+    merge_thresh = 0.7           # merging threshold, max correlation allowed
     low_rank_background = None   # None leaves background of each patch intact
     gnb = -1                     # number of background components (rank) if positive,
     nb_patch = 0                 # number of background components (rank) per patch if gnb>0,
     ssub_B = 1                   # additional downsampling factor in space for background
-    #min_corr = .8                # min peak value from correlation image
-    #min_pnr = 5                  # min peak to noise ration from PNR image
-    #ring_size_factor = 1.4       # radius of ring is gSiz*ring_size_factor
-    #min_SNR = 3           
-    #r_values_min = 0.85   
+
+    # min_corr = 0.8               # min peak value from correlation image
+    # min_pnr = 5                  # min peak to noise ration from PNR image
+    # ring_size_factor = 1.4       # radius of ring is gSiz*ring_size_factor
+    # min_SNR = 3           
+    # r_values_min = 0.85   
+
     epsilon = 1e-8               # small epsilon to avoid division by zero in PNR calculation
 
     # Initialize the CNMF model with the specified parameters
@@ -360,6 +362,7 @@ def set_all_logger_levels(level=logging.WARNING):
             logger.setLevel(level)
 
 def main(args):
+    logging.info("Starting caiman_run.py...")
     # Set max threads (processes) due to memory limitations
     args.processes = 8 if args.processes > 8 else args.processes
 
@@ -400,7 +403,6 @@ def main(args):
             r_values_min=args.r_values_min,
             tsub=args.tsub,
             ssub=args.ssub,
-            p_th=args.p_th,
             min_corr=args.min_corr,
             min_pnr=args.min_pnr,
             ring_size_factor=args.ring_size_factor,

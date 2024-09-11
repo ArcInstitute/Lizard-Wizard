@@ -39,7 +39,7 @@ process MASK {
     path "*masks.tif",                            emit: masks     // image masks
     path "*masked-plot.tif",                      emit: masked_plot, optional: true
     path "*minprojection.tif",                    emit: minprojection, optional: true
-    path "${img_basename}.log",                   emit: log  
+    path "${img_basename}_mask.log",              emit: log  
 
     script:
     def use_2d = params.use_2d == true ? "--use-2d" : ""
@@ -47,12 +47,13 @@ process MASK {
     # set local models path
     export CELLPOSE_LOCAL_MODELS_PATH=models
     # run cellpose
-    mask.py --file-type ${params.file_type} ${use_2d} ${img_file} > ${img_basename}.log 2>&1
+    mask.py --file-type ${params.file_type} ${use_2d} \\
+      ${img_file} > "${img_basename}_mask.log" 2>&1
     """
 
     stub:
     """
-    touch frate.txt image_masked.tif image_masks.tif ${img_basename}.log image_full_minprojection.tif
+    touch frate.txt image_masked.tif image_masks.tif "${img_basename}_mask.log" image_full_minprojection.tif
     """
 }
 
