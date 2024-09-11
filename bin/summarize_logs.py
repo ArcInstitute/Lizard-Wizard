@@ -203,7 +203,7 @@ def main(args):
         for log_file in args.log_file:
             with open(log_file) as inF:
                 step_name = regex.sub("", os.path.basename(log_file))
-                all_summaries += f"#-- Log file: {step_name}  --#\n\n"
+                all_summaries += f"#-- Pipeline step: {step_name}  --#\n\n"
                 all_summaries += inF.read()
                 all_summaries += "\n\n"
     else:

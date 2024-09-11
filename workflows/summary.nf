@@ -34,7 +34,7 @@ workflow SUMMARY_WF {
 }
 
 process LOG_SUMMARY_FINAL {
-    publishDir file(params.output_dir) / "log_summary", mode: "copy", overwrite: true, saveAs: { filename -> saveAsSummary(filename) }
+    publishDir file(params.output_dir) / "logs", mode: "copy", overwrite: true, saveAs: { filename -> saveAsSummary(filename) }
     conda "envs/summary.yml"
     secret "OPENAI_API_KEY"
 
@@ -61,7 +61,8 @@ process LOG_SUMMARY_FINAL {
 }
 
 process LOG_SUMMARY_CAIMAN {
-    publishDir file(params.output_dir) / "log_summary" / "caiman", mode: "copy", overwrite: true, saveAs: { filename -> saveAsSummary(filename) }
+    publishDir file(params.output_dir) / "logs" / "caiman", mode: "copy", overwrite: true, pattern: "*.{md,html}", saveAs: { filename -> saveAsSummary(filename) }
+    publishDir file(params.output_dir) / "logs" / "caiman" / "logs", mode: "copy", overwrite: true, pattern: "*.{log}", saveAs: { filename -> saveAsSummary(filename) }
     conda "envs/summary.yml"
     secret "OPENAI_API_KEY"
 
@@ -72,6 +73,8 @@ process LOG_SUMMARY_CAIMAN {
     output:
     path "output/caiman_summary.md",   emit: md
     path "output/caiman_summary.html", emit: html
+    path caiman_log,                   emit: caiman_log
+    path calc_dff_f0_log,              emit: calc_dff_f0_log
 
     script:
     """
@@ -88,7 +91,8 @@ process LOG_SUMMARY_CAIMAN {
 }
 
 process LOG_SUMMARY_MASK {
-    publishDir file(params.output_dir) / "log_summary" / "mask", mode: "copy", overwrite: true, saveAs: { filename -> saveAsSummary(filename) }
+    publishDir file(params.output_dir) / "logs" / "mask", mode: "copy", overwrite: true, pattern: "*.{md,html}", saveAs: { filename -> saveAsSummary(filename) }
+    publishDir file(params.output_dir) / "logs" / "mask" / "logs", mode: "copy", overwrite: true, pattern: "*.{log}", saveAs: { filename -> saveAsSummary(filename) }
     conda "envs/summary.yml"
     secret "OPENAI_API_KEY"
 
@@ -98,6 +102,7 @@ process LOG_SUMMARY_MASK {
     output:
     path "output/mask_summary.md",   emit: md
     path "output/mask_summary.html", emit: html
+    path mask_log,                   emit: mask_log
 
     script:
     """
@@ -114,7 +119,8 @@ process LOG_SUMMARY_MASK {
 }
 
 process LOG_SUMMARY_MOLDEV_CONCAT {
-    publishDir file(params.output_dir) / "log_summary" / "moldev-concat", mode: "copy", overwrite: true, saveAs: { filename -> saveAsSummary(filename) }
+    publishDir file(params.output_dir) / "logs" / "moldev-concat", mode: "copy", overwrite: true, pattern: "*.{md,html}", saveAs: { filename -> saveAsSummary(filename) }
+    publishDir file(params.output_dir) / "logs" / "moldev-concat" / "logs", mode: "copy", overwrite: true, pattern: "*.{log}", saveAs: { filename -> saveAsSummary(filename) }
     conda "envs/summary.yml"
     secret "OPENAI_API_KEY"
 
@@ -125,6 +131,8 @@ process LOG_SUMMARY_MOLDEV_CONCAT {
     output:
     path "output/moldev-concat_summary.md",   emit: md
     path "output/moldev-concat_summary.html", emit: html
+    path grp_log, emit: grp_log
+    path cat_log, emit: cat_log
 
     script:
     """

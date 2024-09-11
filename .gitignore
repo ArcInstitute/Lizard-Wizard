@@ -10,3 +10,4 @@ archive/
 .nextflow*
 screenlog.*
 *.pyc
+bin/get_metadata.py
