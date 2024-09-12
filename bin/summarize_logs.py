@@ -193,6 +193,10 @@ def main(args):
         write_blank_files(args.log_files, args.output_dir)
         exit()
 
+    # Set gpt-4o model to the specific date gpt-4o-2024-08-06
+    if args.model == "gpt-4o":
+        args.model = "gpt-4o-2024-08-06"
+
     # Create openai client
     client = openai.Client()
     
