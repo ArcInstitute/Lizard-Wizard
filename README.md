@@ -113,11 +113,15 @@ nextflow run main.nf \
   -work-dir /scratch/$(id -gn)/$(whoami)/nextflow-work/lizard-wizard \
   --input_dir /path/to/image/files/ \
   --output_dir /path/to/output/location/ \
-  --test_image_count 3
+  --test_image_count 3 \
+  -N YOUR_EMAIL_HERE@arcinstitute.org
 ```
 
 **Notes:**
 
+* Replace `YOUR_EMAIL_HERE@arcinstitute.org` with your email.
+  * It is used to send the pipeline status updates (e.g., error and completion messages).
+  * You do not have to use `-N`, but it is recommended.
 * `--test_image_count 3` will run the pipeline on 3 randomly selected images.
   * You can also select specific images by using `--test_image_nums` (e.g., `--test_image_nums 1,2,3`).
 * See `./nextflow.config` for all input parameters (e.g., specifying the input file type).
@@ -135,10 +139,12 @@ nextflow run main.nf \
   -work-dir /scratch/$(id -gn)/$(whoami)/nextflow-work/lizard-wizard \
   --input_dir /path/to/image/files/ \
   --output_dir /path/to/output/location/ \
+  -N YOUR_EMAIL_HERE@arcinstitute.org \
   -resume
 ```
 
 **Notes:**
+* Be sure to replace `YOUR_EMAIL_HERE@arcinstitute.org` with your email.
 * The `-resume` flag will prevent the need to re-run the samples included in the spot check, 
   since they are already processed.
   * For this to work, the `--output_dir` directory must be the same as the spot check run.

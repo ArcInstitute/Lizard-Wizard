@@ -20,7 +20,6 @@ workflow {
     )
 
     // Summarize log files
-    /*
     SUMMARY_WF(
         INPUT_WF.out.grp_log,
         INPUT_WF.out.cat_log,
@@ -28,7 +27,6 @@ workflow {
         CAIMAN_WF.out.caiman_log,
         CAIMAN_WF.out.calc_dff_f0_log
     )
-    */
 }
 
 
