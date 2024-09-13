@@ -48,8 +48,30 @@ mamba activate nextflow_env
 
 ## Pipeline install
 
+### Add ssh key to GitHub
+
+> This is only needed if you have not already added your ssh key to GitHub.
+
 ```bash
-git clone https://github.com/ArcInstitute/Lizard-Wizard \
+ssh-keygen -t ed25519 -C "your_email@example.com"
+```
+
+* change `your_email@example.com` to your Arc email
+
+```bash
+cat ~/.ssh/id_ed25519.pub
+```
+
+* copy the output
+* GoTo: `GitHub => Settings > SSH and GPG keys > New SSH key`
+* Paste the output into the key field
+* Add a title (e.g., `Chimera`)
+* Click `Add SSH key`
+
+### Clone the repo
+
+```bash
+git clone git@github.com:ArcInstitute/Lizard-Wizard.git \
   && cd Lizard-Wizard
 ```
 
@@ -88,8 +110,7 @@ A spot check is a small run of the pipeline to ensure that the pipeline paramete
 ```bash
 nextflow run main.nf \
   -profile conda,slurm \
-  -process.scratch /media/8TBNVME/multiomics/ \
-  -work-dir /scratch/multiomics/$(whoami)/nextflow-work/lizard-wizard \
+  -work-dir /scratch/$(id -gn)/$(whoami)/nextflow-work/lizard-wizard \
   --input_dir /path/to/image/files/ \
   --output_dir /path/to/output/location/ \
   --test_image_count 3
@@ -100,8 +121,6 @@ nextflow run main.nf \
 * `--test_image_count 3` will run the pipeline on 3 randomly selected images.
   * You can also select specific images by using `--test_image_nums` (e.g., `--test_image_nums 1,2,3`).
 * See `./nextflow.config` for all input parameters (e.g., specifying the input file type).
-* If you are not in the `multiomics` user group (check by running the `groups` command), 
-  you will need to change the `-process.scratch` and `-work-dir` paths.
 * **Make sure** to change the `--input_dir` and `--output_dir` paths to the correct locations.
 * Use `--file_type zeiss` if the input files are from the Zeiss microscope.
 * If the data is 2d instead of 3d (default), use `--use_2d true`.
@@ -113,8 +132,7 @@ After running the spot check, you can process the full dataset.
 ```bash
 nextflow run main.nf \
   -profile conda,slurm \
-  -process.scratch /media/8TBNVME/multiomics/ \
-  -work-dir /scratch/multiomics/$(whoami)/nextflow-work/lizard-wizard \
+  -work-dir /scratch/$(id -gn)/$(whoami)/nextflow-work/lizard-wizard \
   --input_dir /path/to/image/files/ \
   --output_dir /path/to/output/location/ \
   -resume
@@ -141,7 +159,7 @@ Zeiss 3d:
 ```bash
 nextflow run main.nf \
   -profile dev_zeiss_3d,vm,conda \
-  -work-dir /scratch/multiomics/$(whoami)/nextflow-work/lizard-wizard
+  -work-dir /scratch/$(id -gn)/$(whoami)/nextflow-work/lizard-wizard
 ```
 
 Molecular devices 3d:
@@ -149,7 +167,7 @@ Molecular devices 3d:
 ```bash
 nextflow run main.nf \
   -profile dev_moldev_3d,vm,conda \
-  -work-dir /scratch/multiomics/$(whoami)/nextflow-work/lizard-wizard
+  -work-dir /scratch/$(id -gn)/$(whoami)/nextflow-work/lizard-wizard
 ```
 
 Molecular devices 2d:
@@ -157,7 +175,7 @@ Molecular devices 2d:
 ```bash
 nextflow run main.nf \
   -profile dev_moldev_2d,vm,conda \
-  -work-dir /scratch/multiomics/$(whoami)/nextflow-work/lizard-wizard
+  -work-dir /scratch/$(id -gn)/$(whoami)/nextflow-work/lizard-wizard
 ```
 
 ### Slurm runs
@@ -167,8 +185,7 @@ An example of processing Zeiss 3d images on the cluster:
 ```bash
 nextflow run main.nf \
   -profile dev_zeiss_3d,conda,slurm \
-  -process.scratch /media/8TBNVME/multiomics/ \
-  -work-dir /scratch/multiomics/$(whoami)/nextflow-work/lizard-wizard
+  -work-dir /scratch/$(id -gn)/$(whoami)/nextflow-work/lizard-wizard
 ```
 
 # Resources
@@ -208,51 +225,39 @@ nextflow run main.nf \
 Zeiss 3d:
 
 ```bash
-nextflow run main.nf \
-  -profile dev_zeiss_3d,vm,conda \
-  -work-dir /scratch/multiomics/$(whoami)/nextflow-work/lizard-wizard
+nextflow run main.nf -profile dev_zeiss_3d,vm,conda 
 ```
 
 Molecular devices 3d:
 
 ```bash
-nextflow run main.nf \
-  -profile dev_moldev_3d,vm,conda \
-  -work-dir /scratch/multiomics/$(whoami)/nextflow-work/lizard-wizard
+nextflow run main.nf -profile dev_moldev_3d,vm,conda
 ```
 
 Molecular devices 2d:
 
 ```bash
-nextflow run main.nf \
-  -profile dev_moldev_2d,vm,conda \
-  -work-dir /scratch/multiomics/$(whoami)/nextflow-work/lizard-wizard
+nextflow run main.nf -profile dev_moldev_2d,vm,conda
 ```
 
 ## Slurm runs
 
 ```bash
 nextflow run main.nf \
-  --test_image_count 3 \
   -profile dev_zeiss_3d,conda,slurm \
-  -process.scratch /media/8TBNVME/multiomics/ \
-  -work-dir /scratch/multiomics/$(whoami)/nextflow-work/lizard-wizard
+  --test_image_count 3
 ```
 
 ```bash
 nextflow run main.nf \
-  --test_image_count 3 \
   -profile dev_moldev_3d,conda,slurm \
-  -process.scratch /media/8TBNVME/multiomics/ \
-  -work-dir /scratch/multiomics/$(whoami)/nextflow-work/lizard-wizard
+  --test_image_count 3
 ```
 
 ```bash
 nextflow run main.nf \
-  --test_image_count 3 \
   -profile dev_moldev_2d,conda,slurm \
-  -process.scratch /media/8TBNVME/multiomics/ \
-  -work-dir /scratch/multiomics/$(whoami)/nextflow-work/lizard-wizard
+  --test_image_count 3
 ```
 
 ## Data 
