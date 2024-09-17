@@ -18,7 +18,7 @@ from caiman.utils.visualization import inspect_correlation_pnr, nb_inspect_corre
 from caiman.utils.visualization import plot_contours, nb_view_patches, nb_plot_contour
 # source 
 from load_tiff import load_tiff_metadata, get_metadata_value, extract_exposure
-from caiman_plot_traces import plot_original_traces, plot_denoised_traces
+from caiman_plot_traces import plot_traces #plot_original_traces, plot_denoised_traces
 
 
 # logging
@@ -304,10 +304,13 @@ def cnm_eval_estimates(cnm, Y, frate: float, base_fname: str, output_dir: str) -
         logging.info("Plotting traces...")
         # original traces
         outfile = os.path.join(output_dir, base_fname + "_cnm-traces.png")
-        plot_original_traces(cnm.estimates, idx, cnm.estimates.YrA, frate, outfile=outfile)
+        plot_traces(
+            cnm.estimates, idx, original_data=cnm.estimates.YrA, frate=frate, 
+            trace_type='original', outfile=outfile
+        )
         # denoised traces
         outfile = os.path.join(output_dir, base_fname + "_cnm-denoised-traces.png")
-        plot_denoised_traces(cnm.estimates, idx, frate, outfile=outfile)
+        plot_traces(cnm.estimates, idx, frate=frate, trace_type='denoised', outfile=outfile)
     else:
         logging.warning("No components found to plot traces")
 
