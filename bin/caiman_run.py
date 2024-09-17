@@ -5,6 +5,7 @@ from __future__ import print_function
 import os
 import logging
 import argparse
+import warnings
 import xml.etree.ElementTree as ET
 ## 3rd party
 import numpy as np
@@ -105,7 +106,7 @@ def setup_cluster(processes: int=1) -> int:
             n_processes=processes, 
             ignore_preexisting=True
         )
-        logging.disable(logging.INFO)
+        logging.disable(logging.NOTSET)
         logging.info(f"  Successfully set up a new cluster with {n_processes} processes")
     except Exception as e:
         logging.warning(f"  Error during cluster setup: {str(e)}")
@@ -152,7 +153,7 @@ def plot_correlations(cn_filter, pnr, base_fname: str, output_dir: str) -> None:
     plt.savefig(outfile)
     plt.close()
     ## Status
-    logging.disable(logging.INFO)
+    logging.disable(logging.NOTSET)
     logging.info(f"Correlation and peak-to-noise ratio images saved to {outfile}")
     logging.disable(logging.WARNING)
 
@@ -189,7 +190,7 @@ def plot_correlations(cn_filter, pnr, base_fname: str, output_dir: str) -> None:
     outfile = os.path.join(output_dir, base_fname + '_histogram-pnr-cn-filter.png')
     plt.savefig(outfile, format='tiff')
     #plt.close() 
-    logging.disable(logging.INFO)
+    logging.disable(logging.NOTSET)
     logging.info(f"Histogram of correlation and peak-to-noise ratio images saved to {outfile}")
     
 
@@ -217,7 +218,6 @@ def run_caiman(im, frate: float, decay_time: float, gSig: int, rf: int,
     Returns:
         cnm: The CNMF object containing the results of the CNMF algorithm
     """
-    logging.info("Running Caiman...")
     logging.disable(logging.CRITICAL)
 
     # Set various parameters for the CaImAn execution             
@@ -231,14 +231,12 @@ def run_caiman(im, frate: float, decay_time: float, gSig: int, rf: int,
     gnb = -1                     # number of background components (rank) if positive,
     nb_patch = 0                 # number of background components (rank) per patch if gnb>0,
     ssub_B = 1                   # additional downsampling factor in space for background
-
+    epsilon = 1e-8               # small epsilon to avoid division by zero in PNR calculation
     # min_corr = 0.8               # min peak value from correlation image
     # min_pnr = 5                  # min peak to noise ration from PNR image
     # ring_size_factor = 1.4       # radius of ring is gSiz*ring_size_factor
     # min_SNR = 3           
     # r_values_min = 0.85   
-
-    epsilon = 1e-8               # small epsilon to avoid division by zero in PNR calculation
 
     # Initialize the CNMF model with the specified parameters
     cnm = cnmf.CNMF(
@@ -274,7 +272,6 @@ def run_caiman(im, frate: float, decay_time: float, gSig: int, rf: int,
     cnm.fit(im)
     # set parameters for component evaluation
     cnm.params.set("quality", {"min_SNR": min_SNR, "rval_thr": r_values_min, "use_cnn": False})
-    logging.disable(logging.INFO)
     return cnm
 
 def cnm_eval_estimates(cnm, Y, frate: float, base_fname: str, output_dir: str) -> None:
@@ -290,7 +287,9 @@ def cnm_eval_estimates(cnm, Y, frate: float, base_fname: str, output_dir: str) -
     logging.info("Evaluating CNMF estimates...")
 
     # Evaluate the components
+    logging.disable(logging.WARNING)
     cnm.estimates.evaluate_components(Y, cnm.params)
+    logging.disable(logging.NOTSET)
     logging.info(f"Number of total components: {len(cnm.estimates.C)}")
     logging.info(f"Number of accepted components: {len(cnm.estimates.idx_components)}")
 
@@ -302,8 +301,13 @@ def cnm_eval_estimates(cnm, Y, frate: float, base_fname: str, output_dir: str) -
 
     # Plot original traces stacked on top of each other and the denoised traces
     if len(cnm.estimates.C) > 0:
-        plot_original_traces(cnm.estimates, idx, cnm.estimates.YrA, frate)
-        plot_denoised_traces(cnm.estimates, idx, frate)
+        logging.info("Plotting traces...")
+        # original traces
+        outfile = os.path.join(output_dir, base_fname + "_cnm-traces.png")
+        plot_original_traces(cnm.estimates, idx, cnm.estimates.YrA, frate, outfile=outfile)
+        # denoised traces
+        outfile = os.path.join(output_dir, base_fname + "_cnm-denoised-traces.png")
+        plot_denoised_traces(cnm.estimates, idx, frate, outfile=outfile)
     else:
         logging.warning("No components found to plot traces")
 
@@ -318,6 +322,7 @@ def save_caiman_output(cnm, cn_filter, pnr, base_fname: str, output_dir: str) ->
         output_dir: The output directory to save the CNMF output
     """
     logging.info("Saving CNMF output...")
+    logging.disable(logging.WARNING)
 
     # Save the spatial footprint of the neurons detected by CNMF
     np.save(os.path.join(output_dir, f"{base_fname}_cnm_A.npy"), cnm.estimates.A.todense())
@@ -334,6 +339,7 @@ def save_caiman_output(cnm, cn_filter, pnr, base_fname: str, output_dir: str) ->
     np.save(os.path.join(output_dir, f"{base_fname}_pnr_filter.npy"), pnr)
     tifffile.imwrite(os.path.join(output_dir, f"{base_fname}_cn_filter.tif"), cn_filter)
     tifffile.imwrite(os.path.join(output_dir, f"{base_fname}_pnr_filter.tif"), pnr)
+    logging.disable(logging.NOTSET)
             
 def read_frate(infile: str) -> float:
     """
@@ -355,12 +361,6 @@ def read_frate(infile: str) -> float:
         raise ValueError(f"Could not read frame rate from file {infile}")
     return frate
 
-def set_all_logger_levels(level=logging.WARNING):
-    loggers = logging.Logger.manager.loggerDict
-    for logger_name, logger in loggers.items():
-        if isinstance(logger, logging.Logger):
-            logger.setLevel(level)
-
 def main(args):
     logging.info("Starting caiman_run.py...")
     # Set max threads (processes) due to memory limitations
@@ -377,9 +377,6 @@ def main(args):
     Yr, dims, T = cm.load_memmap(fname_new)
     Y = Yr.T.reshape((T,) + dims, order="F")
 
-    # Set up the cluster
-    n_processes = setup_cluster(args.processes)
-
     # Set output
     os.makedirs(args.output_dir, exist_ok=True)
     base_fname = os.path.basename(os.path.splitext(args.img_file)[0])
@@ -391,27 +388,39 @@ def main(args):
     # Plot the correlation and peak-to-noise ratio images
     plot_correlations(cn_filter, pnr, base_fname, args.output_dir)
 
-    # Run Caiman
-    try:
-        cnm = run_caiman(
-            Y, 
-            frate=frate, 
-            decay_time=args.decay_time,
-            gSig=args.gSig,
-            rf=args.rf,
-            min_SNR=args.min_SNR,
-            r_values_min=args.r_values_min,
-            tsub=args.tsub,
-            ssub=args.ssub,
-            min_corr=args.min_corr,
-            min_pnr=args.min_pnr,
-            ring_size_factor=args.ring_size_factor,
-            n_processes=n_processes,
-            motion_correct=args.motion_correct
-        )
-    finally: 
-        # Regardless of whether the CNMF algorithm runs successfully or not, close the cluster
-        close_cluster()
+    # Run caiman algorithm
+    logging.info("Running Caiman...")
+    logging.disable(logging.CRITICAL)
+    with warnings.catch_warnings(): 
+        # suppress all warnings
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
+        warnings.filterwarnings("ignore", category=UserWarning)
+        # Set the cluster for parallel processing
+        n_processes = setup_cluster(args.processes)
+        # Run Caiman
+        try:
+            cnm = run_caiman(
+                Y, 
+                frate=frate, 
+                decay_time=args.decay_time,
+                gSig=args.gSig,
+                rf=args.rf,
+                min_SNR=args.min_SNR,
+                r_values_min=args.r_values_min,
+                tsub=args.tsub,
+                ssub=args.ssub,
+                min_corr=args.min_corr,
+                min_pnr=args.min_pnr,
+                ring_size_factor=args.ring_size_factor,
+                n_processes=n_processes,
+                motion_correct=args.motion_correct
+            )
+        finally: 
+            # Regardless of whether the CNMF algorithm runs successfully or not, close the cluster
+            close_cluster()
+    
+    # Reset the logger level
+    logging.disable(logging.NOTSET)    
 
     # Check if any components were found
     if cnm.estimates.C.shape[0] == 0:
@@ -422,7 +431,7 @@ def main(args):
 
     # Set the estimates
     cnm_eval_estimates(cnm, Y, frate, base_fname, args.output_dir)
-    
+
     # Visualize the patches
     if len(cnm.estimates.C) > 0:
         logging.info("Visualizing patches...")

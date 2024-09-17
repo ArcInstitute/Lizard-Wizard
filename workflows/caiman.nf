@@ -83,13 +83,15 @@ process CAIMAN {
     path img_masks
 
     output:
-    path img_orig,                      emit: img_orig
-    path img_masked,                    emit: img_masked
-    path img_masks,                     emit: img_masks
-    path "caiman_output/*_cnm_A.npy",   emit: cnm_A
-    path "caiman_output/*_cnm_idx.npy", emit: cnm_idx
+    path img_orig,                                      emit: img_orig
+    path img_masked,                                    emit: img_masked
+    path img_masks,                                     emit: img_masks
+    path "caiman_output/*_cnm_A.npy",                   emit: cnm_A
+    path "caiman_output/*_cnm_idx.npy",                 emit: cnm_idx
     path "caiman_output/*_correlation-pnr.png",         emit: corr_pnr
     path "caiman_output/*_histogram-pnr-cn-filter.png", emit: histo_pnr
+    path "caiman_output/*_cnm-traces.png",              emit: traces, optional: true
+    path "caiman_output/*_cnm-denoised-traces.png",     emit: dn_traces, optional: true
     path "${img_masked.baseName}_caiman.log",           emit: log
 
     script:
@@ -111,7 +113,8 @@ process CAIMAN {
       --min_corr $params.min_corr \\
       --min_pnr $params.min_pnr \\
       --ring_size_factor $params.ring_size_factor \\
-      $frate $img_masked > "${img_masked.baseName}_caiman.log" 2>&1
+      $frate $img_masked \\
+      > "${img_masked.baseName}_caiman.log" 2>&1
     """
 
     stub:
@@ -119,6 +122,10 @@ process CAIMAN {
     mkdir -p caiman_output
     touch caiman_output/${img_masked.baseName}_cnm_A.npy \\
       caiman_output/${img_masked.baseName}_cnm_idx.npy \\
+      caiman_output/${img_masked.baseName}_correlation-pnr.png \\
+      caiman_output/${img_masked.baseName}_histogram-pnr-cn-filter.png \\
+      caiman_output/${img_masked.baseName}_cnm-traces.png \\
+      caiman_output/${img_masked.baseName}_cnm-denoised-traces.png \\
       ${img_masked.baseName}_caiman.log
     """
 }

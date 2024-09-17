@@ -1,10 +1,11 @@
+import logging
 import numpy as np
 import matplotlib.pyplot as plt
 
 
 def plot_original_traces(all_traces: object, accepted_components: list, 
                          original_data: np.ndarray, frate: float, 
-                         zoom_factor: float=1.0) -> None:
+                         outfile: str, zoom_factor: float=1.0) -> None:
     """
     Plots the accepted and rejected original calcium traces vertically stacked with the same y-scale.
     The function will display two vertically stacked plots: one for the accepted traces and one for the rejected traces.
@@ -14,6 +15,7 @@ def plot_original_traces(all_traces: object, accepted_components: list,
         accepted_components: List of indices for the accepted components.
         original_data: The original trace data.
         frate: The frame rate of the recording.
+        outfile: The output file name.
         zoom_factor: The zoom factor for the y-axis.
     """
     # Extract accepted and rejected original traces
@@ -45,7 +47,7 @@ def plot_original_traces(all_traces: object, accepted_components: list,
     # Offset for stacking the traces vertically
     offset_increment = (y_max - y_min) * 1.1 * zoom_factor
 
-    def plot_traces(traces, ax, title, offset_increment):
+    def plot_traces(traces, ax, title, offset_increment) -> None:
         offset = 0
         for i in range(traces.shape[0]):
             ax.plot(time_vector, traces[i] + offset, lw=1)  # lw is line width
@@ -77,11 +79,16 @@ def plot_original_traces(all_traces: object, accepted_components: list,
     # Plot rejected traces
     plot_traces(rejected_traces, axes[1], 'Rejected Original Calcium Traces', offset_increment)
 
+    # Adjust the layout
     plt.tight_layout()
-    plt.show()
+
+    # save the figure
+    plt.savefig(outfile, format=outfile.split('.')[-1], bbox_inches='tight')
+    logging.info(f"Saved original trace plot to {outfile}")
 
 
-def plot_denoised_traces(all_traces: object, accepted_components: list, frate: float, zoom_factor: float=1.0) -> None:
+def plot_denoised_traces(all_traces: object, accepted_components: list, frate: float, 
+                         outfile: str, zoom_factor: float=1.0) -> None:
     """
     Plots the accepted and rejected denoised calcium traces vertically stacked with the same y-scale.
     The function will display two vertically stacked plots: one for the accepted traces and one for the rejected traces.
@@ -90,6 +97,7 @@ def plot_denoised_traces(all_traces: object, accepted_components: list, frate: f
         all_traces: The object containing all the traces, typically an instance of a class with 'C' which holds the denoised trace data.
         accepted_components: List of indices for the accepted components.
         frate: The frame rate of the recording.
+        outfile: The output file name.
         zoom_factor: The zoom factor for the y-axis.
     """
     # Extract accepted and rejected traces
@@ -121,7 +129,7 @@ def plot_denoised_traces(all_traces: object, accepted_components: list, frate: f
     # Offset for stacking the traces vertically
     offset_increment = (y_max - y_min) * 1.1 * zoom_factor
 
-    def plot_traces(traces, ax, title, offset_increment):
+    def plot_traces(traces, ax, title, offset_increment) -> None:
         offset = 0
         for i in range(traces.shape[0]):
             ax.plot(time_vector, traces[i] + offset, lw=1)  # lw is line width
@@ -153,6 +161,10 @@ def plot_denoised_traces(all_traces: object, accepted_components: list, frate: f
     # Plot rejected traces
     plot_traces(rejected_traces, axes[1], 'Rejected Denoised Calcium Traces', offset_increment)
 
+    # Adjust the layout
     plt.tight_layout()
-    plt.show()
+    
+    # Save the figure
+    plt.savefig(outfile, format=outfile.split('.')[-1], bbox_inches='tight')
+    logging.info(f"Saved denoised trace plot to {outfile}")
 
