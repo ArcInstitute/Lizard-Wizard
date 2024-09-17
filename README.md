@@ -123,7 +123,8 @@ nextflow run main.nf \
   * It is used to send the pipeline status updates (e.g., error and completion messages).
   * You do not have to use `-N`, but it is recommended.
 * `--test_image_count 3` will run the pipeline on 3 randomly selected images.
-  * You can also select specific images by using `--test_image_nums` (e.g., `--test_image_nums 1,2,3`).
+  * You can also select specific images by using `--test_image_names` 
+    * e.g., `--test_image_names 10xGCaMP-6wk-F08_s1_FITC,10xGCaMP-6wk-D10_s1_FITC`.
 * See `./nextflow.config` for all input parameters (e.g., specifying the input file type).
 * **Make sure** to change the `--input_dir` and `--output_dir` paths to the correct locations.
 * Use `--file_type zeiss` if the input files are from the Zeiss microscope.

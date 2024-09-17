@@ -4,26 +4,31 @@ workflow INPUT_WF {
     if (params.test_image_count.toInteger() > 0){
         def image_str = params.test_image_count.toInteger() > 1 ? "images" : "image"
         println "Selecting ${params.test_image_count} random test ${image_str}"
-    } else if (params.test_image_nums != null){
-        println "Selecting test images: ${params.test_image_nums}"
+    } else if (params.test_image_names != null){
+        println "Selecting test images: ${params.test_image_names}"
     }
 
     // Create a channel of input images
     if(params.file_type == "zeiss"){
         // Zeiss file type
         ch_img = Channel.fromPath(file(params.input_dir) / "**.czi", checkIfExists: true)
-        // Filter the images by the test_image_count or test_image_nums
+        // Filter the images by the test_image_count or test_image_names
         /// Select random images
         if (params.test_image_count.toInteger() > 0){
-            
             ch_img = ch_img.randomSample(params.test_image_count.toInteger())
         }
         /// Select specific images
-        else if(params.test_image_nums != null){
-            // Convert the string to a list of integers
-            def test_image_nums = params.test_image_nums.split(",").collect{ it.toInteger() }
-            // Select indices from the list of images
-            ch_img = ch_img.collect().map{ list -> test_image_nums.collect{ list[it] } }.flatten()
+        else if(params.test_image_names != null){
+            // Convert the string to a list of basenames
+            def test_image_basenames = params.test_image_names.split(",")
+    
+            // Select images from the list of images by matching the basename
+            ch_img = ch_img.collect().map{ list -> 
+                list.findAll { file -> 
+                    def basename = file.getBaseName()
+                    test_image_basenames.contains(basename)
+                }
+            }.flatten()
         } 
         // Create empty channels for the logs
         ch_grp_log = Channel.empty()
@@ -97,10 +102,10 @@ process MOLDEV_GROUP {
     path "moldev-group.log", emit: log
 
     script:
-    def test_image_nums = params.test_image_nums == null ? "" : "--test-image-nums ${params.test_image_nums}"
+    def test_image_names = params.test_image_names == null ? "" : "--test-image-names ${params.test_image_names}"
     def test_image_count = params.test_image_count == 0 ? "" : "--test-image-count ${params.test_image_count}"
     """
-    group_moldev_files.py $test_image_nums $test_image_count \
+    group_moldev_files.py $test_image_names $test_image_count \
       $input_dir > file_groups.csv 2> moldev-group.log
     """
 
