@@ -5,6 +5,7 @@ from __future__ import print_function
 import os
 import re
 import gc
+import sys
 import logging
 import argparse
 import xml.etree.ElementTree as ET
@@ -117,6 +118,16 @@ def filter_tiff_files(file_groups: dict, test_image_names: str, test_image_count
         file_groups = {k: v for k, v in file_groups.items() if k in group_ids}
     return file_groups
 
+def validate_group_names(group_names: list):
+    regex = re.compile(r"^.+_[A-Z][0-9]{2}_s[0-9]_FITC$")
+    all_valid = True
+    for group_name in group_names:
+        if not regex.match(group_name):
+            print(f"Invalid group name: {group_name}", file=sys.stderr)
+            all_valid = False
+    if not all_valid:
+        raise ValueError("Invalid group names found")
+
 def main(args):
     # Find all TIFF files in the input directory
     tif_files = find_tiff_files(args.input_dir)
@@ -128,6 +139,9 @@ def main(args):
     file_groups = filter_tiff_files(
         file_groups, args.test_image_names, args.test_image_count
     )
+
+    # Validate group names
+    validate_group_names(list(file_groups.keys()))
 
     # Print the groups as csv
     print("group_name,file_path")
