@@ -21,6 +21,7 @@ workflow {
 
     // Summarize log files
     SUMMARY_WF(
+        MASK_WF.out.img_masked,
         INPUT_WF.out.grp_log,
         INPUT_WF.out.cat_log,
         MASK_WF.out.mask_log,

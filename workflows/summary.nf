@@ -1,5 +1,6 @@
 workflow SUMMARY_WF {
     take:
+    ch_img_mask
     ch_grp_log
     ch_cat_log
     ch_mask_log
@@ -7,6 +8,14 @@ workflow SUMMARY_WF {
     ch_calc_dff_f0_log
 
     main:
+    // Create metadata table
+    /// Per-sample
+    CREATE_PER_SAMPLE_METADATA_TABLE(ch_img_mask)
+    /// Combine all samples
+    CREATE_FINAL_METADATA_TABLE(
+        CREATE_PER_SAMPLE_METADATA_TABLE.out.collect()
+    )
+
     // summarize logs
     if("${secrets.OPENAI_API_KEY}" != "null"){
         // summarize moldev-concat logs
@@ -31,6 +40,38 @@ workflow SUMMARY_WF {
             LOG_SUMMARY_CAIMAN.output.md.collect()
         )
     }
+}
+
+process CREATE_FINAL_METADATA_TABLE {
+    publishDir file(params.output_dir), mode: "copy", overwrite: true
+    conda "envs/summary.yml"
+
+    input:
+    path metadata
+
+    output:
+    path "metadata.csv"
+
+    script:
+    """
+    echo "Sample,Well,Frate" > metadata.csv
+    cat $metadata >> metadata.csv
+    """
+}
+
+process CREATE_PER_SAMPLE_METADATA_TABLE {
+    conda "envs/summary.yml"
+
+    input:
+    tuple val(img_basename), path(frate), path(img_masked)
+
+    output:
+    path "${img_basename}.csv", emit: csv
+
+    script:
+    """
+    create_metadata_table.py $img_basename $frate > ${img_basename}.csv
+    """
 }
 
 process LOG_SUMMARY_FINAL {

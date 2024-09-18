@@ -63,6 +63,7 @@ workflow INPUT_WF {
     cat_log = ch_cat_log
 }
 
+
 // Load and concatenate Molecular Devices images
 process MOLDEV_CONCAT {
     conda "envs/cellpose.yml"

@@ -34,7 +34,7 @@ process CALC_DFF_F0 {
     label "process_low_mem"
    
     input:
-    tuple path(frate), path(img_masked)
+    tuple val(img_basename), path(frate), path(img_masked)
     path cnm_A
     path cnm_idx
     path img_orig
@@ -79,7 +79,7 @@ process CAIMAN {
 
     input:
     path img_orig
-    tuple path(frate), path(img_masked)
+    tuple val(img_basename), path(frate), path(img_masked)
     path img_masks
 
     output:

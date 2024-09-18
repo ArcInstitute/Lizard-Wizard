@@ -34,7 +34,7 @@ process MASK {
     path "models/*"
 
     output:
-    tuple path("frate.txt"), path("*masked.tif"), emit: masked    // masked image
+    tuple val(img_basename), path("frate.txt"), path("*masked.tif"),  emit: masked    // masked image
     path img_file,                                emit: img_orig  // original image
     path "*masks.tif",                            emit: masks     // image masks
     path "*masked-plot.tif",                      emit: masked_plot, optional: true
