@@ -3,7 +3,7 @@ Lizard Wizard
 
 <img src="./img/lizard-wizard.png" alt="drawing" width="400"/>
 
-**Calcium imaging analysis Nextflow pipeline for the Arc Institute.**
+**Calcium Image Processing Nextflow pipeline for the Arc Institute.**
 
 **Table of Contents**
 
