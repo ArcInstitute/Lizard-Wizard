@@ -49,7 +49,12 @@ process CALC_DFF_F0 {
     calc_dff_f0.py \\
       --file-type ${params.file_type} \\
       --p_th ${params.p_th} \\
-      $cnm_A $cnm_idx $img_orig $img_masks \\
+      --f_baseline_perc ${params.f_baseline_perc} \\
+      --win_sz ${params.win_sz} \\
+      $cnm_A \\
+      $cnm_idx \\
+      $img_orig \\
+      $img_masks \\
       > "${img_masked.baseName}_calc-diff-f0.log" 2>&1
     """
     

@@ -11,6 +11,49 @@ from scipy import ndimage as ndi
 
 
 # functions
+def save_dff_dat(f_dat, dff_dat, base_fname, output_dir):
+    logging.info(f'Saving f and dff for {base_fname}')
+
+    # save f and dff data
+    np.save(os.path.join(output_dir, f'{base_fname}_f-mean.npy'), f_dat)
+    np.save(os.path.join(output_dir, f'{base_fname}_dff-f-mean.npy'), dff_dat)
+
+def define_slice_extraction(file_type: str, A: np.ndarray, im: np.ndarray,
+                            im_shape: np.ndarray, im_bg: np.ndarray) -> tuple:
+    """
+    Define the slice extraction logic based on file type.
+    Args:
+        file_type: Type of the file being processed.
+        A: Spatial components matrix.
+        im: Image data.
+        im_shape: Shape of the image data.
+        im_bg: Background image data.
+    Returns:
+        f_dat: Fluorescence data matrix.
+        slice_indices: Indices for slicing the image data.
+        slice_extraction: Function for extracting slices from the image data.
+    """
+    logging.info(f'Defining slice extraction for {file_type}')
+
+    # Define slice extraction logic based on file type
+    if file_type.lower() == 'moldev':
+        # Initialize storage for fluorescence data if moldev
+        f_dat = np.zeros((A.shape[1], im_shape[0]), dtype='float')
+        slice_indices = range(im.shape[0])
+        slice_extraction = lambda im, z: im[z, :, :]
+    elif file_type.lower() == 'zeiss':
+        # Initialize storage for fluorescence data
+        f_dat = np.zeros((A.shape[1], im.shape[1]), dtype='float')
+        slice_indices = range(im.shape[1])
+        slice_extraction = lambda im, z: im[0, z, 0, :, :]
+
+    # Subtract background and adjust negative values
+    f_dat -= im_bg
+    f_dat[f_dat < 0] = 0
+    f_dat += 2
+
+    return f_dat, slice_indices, slice_extraction
+
 def check_and_load_file(file_path: str) -> np.ndarray:
     """
     Checks if a file exists and loads it based on its extension.
@@ -52,6 +95,8 @@ def convert_f_to_dff_perc(f_mat: np.ndarray, perc: int, win_sz: int=500) -> np.n
     Returns:
         dff_mat: Delta F/F matrix.
     """
+    logging.info(f'Generating dff with perc {perc} and win_sz {win_sz}')
+
     # Allocate array for baseline
     f_base = np.zeros_like(f_mat)
     
@@ -99,8 +144,9 @@ def plot_stacked_traces(dff_dat: np.ndarray, time_points: np.ndarray,
     plt.show()
 
 def draw_dff_activity(act_dat: np.ndarray, act_filt_nsp_ids: np.array, max_dff_int: float, 
-                      begin_tp: int, end_tp: int, sz_per_neuron, analysis_dir: str, base_fname: str, 
-                      n_start: int=0, n_stop: int=-1, dff_bar: float=1.0, frate: int=30, lw: float=0.2) -> None:
+                      begin_tp: int, end_tp: int, sz_per_neuron, output_dir: str, 
+                      base_fname: str, n_start: int=0, n_stop: int=-1, dff_bar: float=1.0, 
+                      frate: int=30, lw: float=0.2) -> None:
     """
     Plot the activity data of neurons within a specified time range.
     Args:
@@ -109,7 +155,7 @@ def draw_dff_activity(act_dat: np.ndarray, act_filt_nsp_ids: np.array, max_dff_i
         max_dff_int: Maximum ΔF/F intensity for scaling the plot.
         begin_tp: Starting time point for the plot.
         end_tp: Ending time point for the plot.
-        analysis_dir: Directory where the plot will be saved.
+        output_dir: Directory where the plot will be saved.
         base_fname: Base filename for the plot.
         n_start: Index of the first cell to plot.
         n_stop: Index of the last cell to plot.
@@ -117,6 +163,9 @@ def draw_dff_activity(act_dat: np.ndarray, act_filt_nsp_ids: np.array, max_dff_i
         frate: Frames per second of the data.
         lw: Line width of the plot.
     """
+    logging.info(f'Plotting ΔF/F₀ activity for {base_fname}')
+    logging.disable(logging.WARNING)
+
     # Ensure valid end_tp
     end_tp = end_tp if end_tp >= 0 else act_dat.shape[1]
     
@@ -170,7 +219,8 @@ def draw_dff_activity(act_dat: np.ndarray, act_filt_nsp_ids: np.array, max_dff_i
     plt.show()
 
     # Save plot
-    fig.savefig(os.path.join(analysis_dir, f'df_f0_graph_{base_fname}.tif'), format='tiff')
+    fig.savefig(os.path.join(output_dir, f'{base_fname}_df-f0-graph.tif'), format='tiff')
+    logging.disable(logging.NOTSET)
 
 def overlay_images(im_avg: np.ndarray, binary_overlay: np.ndarray, 
                    overlay_color: list=[255, 255, 0]) -> np.ndarray:

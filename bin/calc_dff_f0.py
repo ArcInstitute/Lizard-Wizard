@@ -13,7 +13,10 @@ from tqdm import tqdm
 ## local
 from load_czi import load_image_data_czi
 from load_tiff import load_image_data_moldev, load_image_data_moldev_concat
-from calc_dff_f0_utils import check_and_load_file, create_montage, convert_f_to_dff_perc, draw_dff_activity, plot_montage
+from calc_dff_f0_utils import (
+    check_and_load_file, create_montage, convert_f_to_dff_perc, draw_dff_activity, 
+    plot_montage, define_slice_extraction, save_dff_dat
+)
 
 # logging
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
@@ -23,9 +26,9 @@ class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter,
                       argparse.RawDescriptionHelpFormatter):
     pass
 
-desc = "Calculate the delta F/F0 (dF/F0) for a given image file and generates spatial components montages."
+desc = "Calculate the delta F/F0"
 epi = """DESCRIPTION:
-
+Calculates delta F/F0 (dF/F0) for a given image file and generates spatial components montages.
 """
 parser = argparse.ArgumentParser(description=desc, epilog=epi,
                                  formatter_class=CustomFormatter)
@@ -44,6 +47,10 @@ parser.add_argument("-f", "--file-type", type=str, default='zeiss',
                     help="Input file type")
 parser.add_argument('--p_th', type=float, default=0.75,
                     help='Threshold percentile for image processing')
+parser.add_argument('--f_baseline_perc', type=float, default=8,
+                    help='Percentile value for the filter when converting fluorescence data to delta F/F')
+parser.add_argument('--win_sz', type=int, default=500,
+                    help='Window size for the percent filter.')
 
 # functions
 def read_img_file(img_file: str, file_type: str) -> tuple:
@@ -88,7 +95,7 @@ def read_img_file(img_file: str, file_type: str) -> tuple:
     logging.info(f"Frame rate: {frate}")
     logging.info(f"Image shape: {im_shape}")
     logging.info(f"Image size: {im_sz}")
-    return im, frate, im_shape, im_sz, im_avg
+    return im, float(frate), im_shape, im_sz, im_avg
 
 def main(args):
     logging.info("Starting calc_dff_f0.py...")
@@ -135,7 +142,7 @@ def main(args):
 
     # Initialize storage for processed images
     im_st = np.zeros((A.shape[1], im_sz[0], im_sz[1]), dtype='uint16')
-    logging.info("Generating im_st with p_th of {args.p_th}")
+    logging.info(f"Generating im_st with p_th of {args.p_th}")
     dict_mask = {}
     
     # Generate im_st by thresholding the components in A
@@ -167,7 +174,7 @@ def main(args):
     logging.info(f"Reading index file: {args.cnm_idx_file}")
     idx = np.load(args.cnm_idx_file)
     ## Filter the components
-    logging.info(f"Filtering montage components...")
+    logging.info("Filtering montage components...")
     filtered_im_st = im_st[idx, :, :]
     n_images = len(filtered_im_st)
     grid_shape = (np.ceil(np.sqrt(n_images)).astype(int), np.ceil(np.sqrt(n_images)).astype(int))
@@ -175,6 +182,34 @@ def main(args):
     logging.info("Creating montage image...")
     montage_image = create_montage(filtered_im_st, im_avg, grid_shape)
     plot_montage(montage_image, outfile_montage_filtered)
+
+    # Define the slice extraction logic based on file type
+    f_dat, slice_indices, slice_extraction = define_slice_extraction(
+        args.file_type, A, im, im_shape, im_bg
+    )
+    
+    # Convert fluorescence data to delta F/F
+    dff_dat = convert_f_to_dff_perc(f_dat, perc=args.f_baseline_perc, win_sz=args.win_sz)
+    
+    # Save dff_dat data
+    save_dff_dat(f_dat, dff_dat, base_fname, args.output_dir)
+
+    # Draw only accepted df/f0 values
+    draw_dff_activity(
+        dff_dat, idx, 
+        max_dff_int=0.45,
+        begin_tp=0, 
+        end_tp=-1, 
+        output_dir=args.output_dir, 
+        base_fname=base_fname,
+        dff_bar=1,
+        frate=frate, 
+        n_start=0, 
+        n_stop=-1, 
+        lw=0.55, 
+        sz_per_neuron=0.5
+    )
+
 
 ## script main
 if __name__ == '__main__':
