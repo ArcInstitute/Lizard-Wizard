@@ -297,7 +297,7 @@ def cnm_eval_estimates(cnm, Y, frate: float, base_fname: str, output_dir: str) -
     idx = cnm.estimates.idx_components
             
     # Save the indices of accepted components
-    np.save(os.path.join(output_dir, f"{base_fname}_cnm_idx.npy"), idx)
+    np.save(os.path.join(output_dir, f"{base_fname}_cnm-idx.npy"), idx)
 
     # Plot original traces stacked on top of each other and the denoised traces
     if len(cnm.estimates.C) > 0:
@@ -328,20 +328,20 @@ def save_caiman_output(cnm, cn_filter, pnr, base_fname: str, output_dir: str) ->
     logging.disable(logging.WARNING)
 
     # Save the spatial footprint of the neurons detected by CNMF
-    np.save(os.path.join(output_dir, f"{base_fname}_cnm_A.npy"), cnm.estimates.A.todense())
+    np.save(os.path.join(output_dir, f"{base_fname}_cnm-A.npy"), cnm.estimates.A.todense())
             
     # Save the temporal components (i.e., the calcium activity over time) of neurons detected by CNMF
-    np.save(os.path.join(output_dir, f"{base_fname}_cnm_C.npy"), cnm.estimates.C)
+    np.save(os.path.join(output_dir, f"{base_fname}_cnm-C.npy"), cnm.estimates.C)
             
     # Deconvolved neural activity or spike estimates
     # is array, each row=neuron and each column=time point.
-    np.save(os.path.join(output_dir, f"{base_fname}_cnm_S.npy"), cnm.estimates.S)
+    np.save(os.path.join(output_dir, f"{base_fname}_cnm-S.npy"), cnm.estimates.S)
             
     # Save correlation and PNR images
-    np.save(os.path.join(output_dir, f"{base_fname}_cn_filter.npy"), cn_filter)
-    np.save(os.path.join(output_dir, f"{base_fname}_pnr_filter.npy"), pnr)
-    tifffile.imwrite(os.path.join(output_dir, f"{base_fname}_cn_filter.tif"), cn_filter)
-    tifffile.imwrite(os.path.join(output_dir, f"{base_fname}_pnr_filter.tif"), pnr)
+    np.save(os.path.join(output_dir, f"{base_fname}_cn-filter.npy"), cn_filter)
+    np.save(os.path.join(output_dir, f"{base_fname}_pnr-filter.npy"), pnr)
+    tifffile.imwrite(os.path.join(output_dir, f"{base_fname}_cn-filter.tif"), cn_filter)
+    tifffile.imwrite(os.path.join(output_dir, f"{base_fname}_pnr-filter.tif"), pnr)
     logging.disable(logging.NOTSET)
             
 def read_frate(infile: str) -> float:

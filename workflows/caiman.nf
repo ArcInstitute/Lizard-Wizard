@@ -67,8 +67,10 @@ process CALC_DFF_F0 {
 
 // Select/format the output files
 def saveAsCaiman(filename){
-    if (filename.endsWith('_cnm_A.npy') || 
-        filename.endsWith('_cnm_idx.npy') || 
+    if (filename.endsWith('_cnm-A.npy') || 
+        filename.endsWith('_cnm-C.npy') || 
+        filename.endsWith('_cnm-S.npy') || 
+        filename.endsWith('_cnm-idx.npy') || 
         filename.endsWith('.log') || 
         filename.endsWith('.png')) {
         return saveAsBase(filename)
@@ -91,8 +93,10 @@ process CAIMAN {
     path img_orig,                                      emit: img_orig
     path img_masked,                                    emit: img_masked
     path img_masks,                                     emit: img_masks
-    path "caiman_output/*_cnm_A.npy",                   emit: cnm_A
-    path "caiman_output/*_cnm_idx.npy",                 emit: cnm_idx
+    path "caiman_output/*_cnm-A.npy",                   emit: cnm_A
+    path "caiman_output/*_cnm-C.npy",                   emit: cnm_C
+    path "caiman_output/*_cnm-S.npy",                   emit: cnm_S
+    path "caiman_output/*_cnm-idx.npy",                 emit: cnm_idx
     path "caiman_output/*_correlation-pnr.png",         emit: corr_pnr
     path "caiman_output/*_histogram-pnr-cn-filter.png", emit: histo_pnr
     path "caiman_output/*_cnm-traces.png",              emit: traces, optional: true
