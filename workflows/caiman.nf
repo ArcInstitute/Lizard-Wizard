@@ -71,6 +71,8 @@ def saveAsCaiman(filename){
         filename.endsWith('_cnm-C.npy') || 
         filename.endsWith('_cnm-S.npy') || 
         filename.endsWith('_cnm-idx.npy') || 
+        filename.endsWith('_cn-filter.npy') || 
+        filename.endsWith('_pnr-filter.npy') || 
         filename.endsWith('.log') || 
         filename.endsWith('.png')) {
         return saveAsBase(filename)
@@ -97,6 +99,8 @@ process CAIMAN {
     path "caiman_output/*_cnm-C.npy",                   emit: cnm_C
     path "caiman_output/*_cnm-S.npy",                   emit: cnm_S
     path "caiman_output/*_cnm-idx.npy",                 emit: cnm_idx
+    path "caiman_output/*_cn-filter.npy",               emit: cn_filter
+    path "caiman_output/*_pnr-filter.npy",              emit: pnr_filter
     path "caiman_output/*_correlation-pnr.png",         emit: corr_pnr
     path "caiman_output/*_histogram-pnr-cn-filter.png", emit: histo_pnr
     path "caiman_output/*_cnm-traces.png",              emit: traces, optional: true
@@ -145,7 +149,7 @@ process CAIMAN {
     path "caiman_output/*_cnm_C.npy"
     path "caiman_output/*_cnm_S.npy"
     path "caiman_output/*_cnm_idx.npy"
-    path "caiman_output/*_masked_pnr_filter.npy"
+    path "caiman_output/*_pnr_filter.npy"
     path "caiman_output/*_masked_pnr_filter.tif"
     path "caiman_output/correlation_pnr.png"
     path "caiman_output/histogram_pnr_cn_filter.png"

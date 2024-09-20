@@ -15,8 +15,8 @@ def save_dff_dat(f_dat, dff_dat, base_fname, output_dir):
     logging.info(f'Saving f and dff for {base_fname}')
 
     # save f and dff data
-    np.save(os.path.join(output_dir, f'{base_fname}_f-mean.npy'), f_dat)
-    np.save(os.path.join(output_dir, f'{base_fname}_dff-f-mean.npy'), dff_dat)
+    np.save(os.path.join(output_dir, f'{base_fname}_f-dat.npy'), f_dat)
+    np.save(os.path.join(output_dir, f'{base_fname}_dff-dat.npy'), dff_dat)
 
 def define_slice_extraction(file_type: str, A: np.ndarray, im: np.ndarray,
                             im_shape: np.ndarray, im_bg: np.ndarray) -> tuple:
