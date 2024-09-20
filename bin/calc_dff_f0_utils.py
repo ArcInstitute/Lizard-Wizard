@@ -12,7 +12,7 @@ from scipy import ndimage as ndi
 
 # functions
 def save_dff_dat(f_dat, dff_dat, base_fname, output_dir):
-    logging.info(f'Saving f and dff for {base_fname}')
+    logging.info(f'Saving f-dat and dff-dat for {base_fname}')
 
     # save f and dff data
     np.save(os.path.join(output_dir, f'{base_fname}_f-dat.npy'), f_dat)
