@@ -148,8 +148,8 @@ def create_symlinks(img_groups: dict, output_dir: str) -> dict:
     # create output directory
     os.makedirs(args.output_dir, exist_ok=True)
     # regex to remove special characters for output file names
-    regex = re.compile('[^a-zA-Z0-9._-]')
-    regex2 = re.compile('[^a-zA-Z0-9]+$')
+    regex = re.compile(r'[^a-zA-Z0-9._-]')
+    regex2 = re.compile(r'[^a-zA-Z0-9]+$')
     # create symlinks
     updated_groups = {}
     for group,file_paths in img_groups.items():
@@ -180,12 +180,14 @@ def write_group_table(img_groups: list, outfile: str="groups.csv") -> None:
         img_groups: List of image groups
         output_dir: Path to the output directory
     """
-    # write group table
+    # write table
+    regex = re.compile(r'[^a-zA-Z0-9._-]')
     with open(outfile, "w") as file:
         file.write("group_name,file_path\n")
         for group, img_files in img_groups.items():
+            group_str = regex.sub('_', group)
             for img_file in img_files:
-                file.write(f"{group},{img_file}\n")
+                file.write(f"{group_str},{img_file}\n")
     # status
     logging.info(f"Group table written to: {outfile}")
 
@@ -194,14 +196,12 @@ def main(args):
     img_files = find_image_files(args.input_dir)
     # filter images by file type
     img_files = filter_img_files(img_files, args.file_type)
-
     # group files
     img_groups = group_img_files(img_files)
     # filter images by test image names or count
     img_groups = select_img_groups(
         img_groups, args.test_image_names, args.test_image_count
     )
-
     # create symlinks
     img_groups = create_symlinks(img_groups, args.output_dir)
     # write group table

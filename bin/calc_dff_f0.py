@@ -117,13 +117,14 @@ def main(args):
     # Check if the mask file is provided
     logging.info(f"Reading image masks file: {args.img_masks_file}")
     masks = check_and_load_file(args.img_masks_file)
-    logging.info(f"  Masks shape: {masks.shape}")
 
     # Calc the background intensity
     if masks is not None:
+        logging.info(f"  Masks shape: {masks.shape}")
         mask_bg = (masks < 1) & (im_avg > 0)
         im_bg = np.median(im_avg[mask_bg]) * 0.9
     else:
+        logging.warning("  No masks provided. Estimating background intensity from the average image.")
         im_bg = np.median(im_avg) * 0.9
     logging.info(f"im_bg estimated as {im_bg}")
 
