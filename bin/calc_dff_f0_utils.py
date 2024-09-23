@@ -84,7 +84,6 @@ def check_and_load_file(file_path: str) -> np.ndarray:
         logging.warning(error_msg)
     return None
    
-
 def convert_f_to_dff_perc(f_mat: np.ndarray, perc: int, win_sz: int=500) -> np.ndarray:
     """
     Convert fluorescence data to delta F/F using a percentile filter.

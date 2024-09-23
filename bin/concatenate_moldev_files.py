@@ -4,6 +4,7 @@
 from __future__ import print_function
 import os
 import re
+import gc
 import logging
 import argparse
 import xml.etree.ElementTree as ET
@@ -11,6 +12,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 ## 3rd party
 import numpy as np
 import tifffile
+## package
+from load_tiff import load_image_data_moldev_concat
 
 
 # logging
@@ -140,14 +143,25 @@ def concatenate_images(files: list, output_file: str) -> None:
         # Remove StripOffsets tag to avoid issues with saving
         metadata = {tag.name: tag.value for tag in metadata.values() if tag.name != 'StripOffsets'}
 
+    # output directory
+    output_dir = os.path.dirname(output_file)
+    if output_dir != "" and not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
     # Save the combined image with metadata
     with tifffile.TiffWriter(output_file, bigtiff=True) as tif_writer:
         tif_writer.write(combined_image, metadata=metadata)
     logging.info(f"  Saved combined image: {output_file}")
 
 def main(args):
+    # Check if the output file already exists
     logging.info("Starting concatenate_moldev_files.py...")
     concatenate_images(args.img_files, args.output)
+
+    # Check the format of the output
+    logging.info("Checking the format of the output...")
+    gc.collect()
+    load_image_data_moldev_concat(args.output)
 
 ## script main
 if __name__ == '__main__':

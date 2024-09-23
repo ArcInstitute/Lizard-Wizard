@@ -189,7 +189,8 @@ def plot_correlations(cn_filter, pnr, base_fname: str, output_dir: str) -> None:
     # Save the plot of pnr and corr filter
     outfile = os.path.join(output_dir, base_fname + '_histogram-pnr-cn-filter.png')
     plt.savefig(outfile, format='tiff')
-    #plt.close() 
+
+    # Status
     logging.disable(logging.NOTSET)
     logging.info(f"Histogram of correlation and peak-to-noise ratio images saved to {outfile}")
     
@@ -231,12 +232,7 @@ def run_caiman(im, frate: float, decay_time: float, gSig: int, rf: int,
     gnb = -1                     # number of background components (rank) if positive,
     nb_patch = 0                 # number of background components (rank) per patch if gnb>0,
     ssub_B = 1                   # additional downsampling factor in space for background
-    epsilon = 1e-8               # small epsilon to avoid division by zero in PNR calculation
-    # min_corr = 0.8               # min peak value from correlation image
-    # min_pnr = 5                  # min peak to noise ration from PNR image
-    # ring_size_factor = 1.4       # radius of ring is gSiz*ring_size_factor
-    # min_SNR = 3           
-    # r_values_min = 0.85   
+    epsilon = 1e-8               # small epsilon to avoid division by zero in PNR calculation 
 
     # Initialize the CNMF model with the specified parameters
     cnm = cnmf.CNMF(
@@ -374,6 +370,7 @@ def main(args):
     logging.info(f"Frame rate set to: {frate}")
 
     # Create a memory-mapped file using CaImAn from the temp file
+    logging.info("Creating memory-mapped file...")
     fname_new = cm.save_memmap([args.img_file], base_name="memmap_", order="C")
   
     # Load the memory-mapped file

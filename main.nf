@@ -15,14 +15,14 @@ workflow {
     // Run Caiman
     CAIMAN_WF(
         MASK_WF.out.img_orig, 
-        MASK_WF.out.img_masked, 
+        MASK_WF.out.img_masked,
         MASK_WF.out.img_masks
     )
-
+    
     // Summarize log files
     SUMMARY_WF(
         MASK_WF.out.img_masked,
-        INPUT_WF.out.grp_log,
+        INPUT_WF.out.fmt_log,
         INPUT_WF.out.cat_log,
         MASK_WF.out.mask_log,
         CAIMAN_WF.out.caiman_log,
@@ -30,10 +30,8 @@ workflow {
     )
 }
 
-
 // On complete
 workflow.onComplete {
     println "Pipeline completed at: $workflow.complete"
     println "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
 }
-

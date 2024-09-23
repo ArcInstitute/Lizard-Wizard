@@ -55,7 +55,7 @@ process CALC_DFF_F0 {
       $cnm_idx \\
       $img_orig \\
       $img_masks \\
-      > "${img_masked.baseName}_calc-diff-f0.log" 2>&1
+      > ${img_masked.baseName}_calc-diff-f0.log 2>&1
     """
     
     stub:
@@ -127,7 +127,7 @@ process CAIMAN {
       --min_pnr $params.min_pnr \\
       --ring_size_factor $params.ring_size_factor \\
       $frate $img_masked \\
-      > "${img_masked.baseName}_caiman.log" 2>&1
+      > ${img_masked.baseName}_caiman.log 2>&1
     """
 
     stub:

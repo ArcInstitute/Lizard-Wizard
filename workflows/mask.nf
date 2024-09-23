@@ -48,12 +48,12 @@ process MASK {
     export CELLPOSE_LOCAL_MODELS_PATH=models
     # run cellpose
     mask.py --file-type ${params.file_type} ${use_2d} \\
-      ${img_file} > "${img_basename}_mask.log" 2>&1
+      ${img_file} > ${img_basename}_mask.log 2>&1
     """
 
     stub:
     """
-    touch frate.txt image_masked.tif image_masks.tif "${img_basename}_mask.log" image_full_minprojection.tif
+    touch frate.txt image_masked.tif image_masks.tif ${img_basename}_mask.log image_full_minprojection.tif
     """
 }
 

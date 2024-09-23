@@ -70,7 +70,7 @@ process CREATE_PER_SAMPLE_METADATA_TABLE {
 
     script:
     """
-    create_metadata_table.py $img_basename $frate > ${img_basename}.csv
+    create_metadata_table.py "$img_basename" $frate > "${img_basename}.csv"
     """
 }
 
