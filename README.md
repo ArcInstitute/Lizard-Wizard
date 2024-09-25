@@ -169,7 +169,7 @@ nextflow run main.nf \
   -work-dir /scratch/$(id -gn)/$(whoami)/nextflow-work/lizard-wizard
 ```
 
-Molecular devices 3d:
+Molecular Devices 3d:
 
 ```bash
 nextflow run main.nf \
@@ -177,11 +177,19 @@ nextflow run main.nf \
   -work-dir /scratch/$(id -gn)/$(whoami)/nextflow-work/lizard-wizard
 ```
 
-Molecular devices 2d:
+Molecular Devices 2d:
 
 ```bash
 nextflow run main.nf \
   -profile dev_moldev_2d,vm,conda \
+  -work-dir /scratch/$(id -gn)/$(whoami)/nextflow-work/lizard-wizard
+```
+
+Simulated Molecular Devices 2d:
+
+```bash
+nextflow run main.nf \
+  -profile dev_moldev_2d_sim,vm,conda \
   -work-dir /scratch/$(id -gn)/$(whoami)/nextflow-work/lizard-wizard
 ```
 

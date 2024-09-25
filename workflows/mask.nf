@@ -1,12 +1,13 @@
 workflow MASK_WF {
     take:
     ch_img
+    use_2d 
 
     main:
     // download cellpose models
     ch_models = DOWNLOAD_CELLPOSE_MODELS()
     // mask each image
-    ch_img_mask = MASK(ch_img, ch_models.collect())
+    ch_img_mask = MASK(ch_img, ch_models.collect(), use_2d)
     
     emit:
     img_orig = ch_img_mask.img_orig // original images
@@ -32,6 +33,7 @@ process MASK {
     input:
     tuple val(img_basename), path(img_file)
     path "models/*"
+    each use_2d
 
     output:
     tuple val(img_basename), path("frate.txt"), path("*masked.tif"),  emit: masked    // masked image
@@ -42,12 +44,12 @@ process MASK {
     path "${img_basename}_mask.log",              emit: log  
 
     script:
-    def use_2d = params.use_2d == true ? "--use-2d" : ""
+    def use_2d_str = use_2d == true ? "--use-2d" : ""
     """
     # set local models path
     export CELLPOSE_LOCAL_MODELS_PATH=models
     # run cellpose
-    mask.py --file-type ${params.file_type} ${use_2d} \\
+    mask.py --file-type ${params.file_type} ${use_2d_str} \\
       ${img_file} > ${img_basename}_mask.log 2>&1
     """
 

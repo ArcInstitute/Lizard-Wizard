@@ -1,10 +1,9 @@
 workflow SIMULATE_WF {
-    // simulate data
+    // Simulate data
     SIMULATE_EVENTS()
-    ch_img = SIMULATE_EVENTS.out.tif
 
     // Create tuple of (base_name, image_path) for each image
-    ch_img = ch_img.map{ img_path -> tuple(img_path.baseName, img_path) }
+    ch_img = SIMULATE_EVENTS.out.tif.flatten().map{ img_path -> tuple(img_path.baseName, img_path) }
 
     emit:
     img = ch_img
@@ -12,21 +11,29 @@ workflow SIMULATE_WF {
     cat_log = channel.empty()
 }
 
+def saveAsBase(filename){
+    return filename.split("/").last()
+}
+
 process SIMULATE_EVENTS {
-    publishDir file(params.output_dir) / "simulate", mode: "copy", overwrite: true
+    publishDir file(params.output_dir) / "simulation", mode: "copy", overwrite: true, saveAs: { filename -> saveAsBase(filename) }
     conda "envs/cellpose.yml"
 
     output:
-    path "synthetic_puffs_movie.tiff",         emit: tif
-    path "synthetic_puffs_puff_positions.csv", emit: csv
+    path "output/*.tif", emit: tif
+    path "output/*.csv", emit: csv
 
     script:
     """
-    simulate_events.py ${baseDir}/data/synthetic_puffs_movie.tiff
+    simulate_events.py \\
+      --num_simulations ${params.num_simulations} \\
+      --output_dir output \\
+      ${baseDir}/data/synthetic_puffs_movie.tiff
     """
 
     stub:
     """
-    touch synthetic_puffs_movie.tiff synthetic_puffs_puff_positions.csv
+    mkdir -p output
+    touch output/synthetic_puffs_sim-1_A01_s1_FITC.csv
     """
 }  

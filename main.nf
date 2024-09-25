@@ -7,8 +7,12 @@ include { SUMMARY_WF } from './workflows/summary.nf'
 
 // Main workflow
 workflow {
+    def use_2d = params.use_2d
     // Create the image channel
     if (params.simulate == true) {
+        // just simulates 2d data
+        use_2d = true
+        // run the simulation workflow
         SIMULATE_WF()
         ch_img = SIMULATE_WF.out.img
         ch_fmt_log = SIMULATE_WF.out.fmt_log
@@ -19,9 +23,9 @@ workflow {
         ch_fmt_log = INPUT_WF.out.fmt_log
         ch_cat_log = INPUT_WF.out.cat_log
     }
-    
+
     // Create the mask channel
-    MASK_WF(ch_img)
+    MASK_WF(ch_img, channel.of(use_2d))
 
     // Run Caiman
     CAIMAN_WF(

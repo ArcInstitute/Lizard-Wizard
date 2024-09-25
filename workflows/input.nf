@@ -1,7 +1,4 @@
 workflow INPUT_WF {
-    // simulate data
-    //SIMULATE_EVENTS()
-
     // Status
     println("File type: ${params.file_type}")
     if (params.test_image_count.toInteger() > 0){
