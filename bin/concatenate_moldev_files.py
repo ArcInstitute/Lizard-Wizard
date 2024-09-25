@@ -5,6 +5,7 @@ from __future__ import print_function
 import os
 import re
 import gc
+import shutil
 import logging
 import argparse
 import xml.etree.ElementTree as ET
@@ -154,7 +155,7 @@ def concatenate_images(files: list, output_file: str) -> None:
     logging.info(f"  Saved combined image: {output_file}")
 
 def main(args):
-    # Check if the output file already exists
+    # Concatenate the images
     logging.info("Starting concatenate_moldev_files.py...")
     concatenate_images(args.img_files, args.output)
 

@@ -1,4 +1,7 @@
 workflow INPUT_WF {
+    // simulate data
+    //SIMULATE_EVENTS()
+
     // Status
     println("File type: ${params.file_type}")
     if (params.test_image_count.toInteger() > 0){
@@ -101,3 +104,4 @@ process FORMAT_INPUT{
     touch groups.csv format_input.log $OUTDIR/TEST1.tif $OUTDIR/TEST2.tif
     """
 }
+ 
