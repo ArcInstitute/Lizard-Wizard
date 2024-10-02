@@ -300,7 +300,7 @@ def create_movie(puff, sim_num: int, args: dict):
 
     ## Save the movie as a multi-page TIFF
     movie_file = os.path.join(output_dir, f'{base_fname}.tif')
-    tifffile.imwrite(movie_file, sim_mov.astype(np.uint8), metadata=get_metadata())
+    tifffile.imwrite(movie_file, sim_mov, metadata=get_metadata())
     logging.info(f'Movie saved as TIFF to {movie_file}')
 
     ## Check the metadata formatting
