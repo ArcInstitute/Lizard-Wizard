@@ -37,10 +37,10 @@ process MASK {
 
     output:
     tuple val(img_basename), path("frate.txt"), path("*masked.tif"),  emit: masked    // masked image
-    path img_file,                                emit: img_orig  // original image
-    path "*masks.tif",                            emit: masks     // image masks
-    path "*masked-plot.tif",                      emit: masked_plot, optional: true
-    path "*minprojection.tif",                    emit: minprojection, optional: true
+    path img_file,                                emit: img_orig       // original image
+    path "*masks.tif",                            emit: masks          // image masks
+    path "*minprojection.tif",                    emit: minprojection  // minprojection image
+    path "*masked-plot.tif",                      emit: masked_plot, optional: true  
     path "${img_basename}_mask.log",              emit: log  
 
     script:

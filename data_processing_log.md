@@ -1,6 +1,29 @@
 Nick's data processing log.
 Consider this log as a set of examples of how to run the pipeline.
 
+## Spot check 
+
+```bash
+nextflow run main.nf \
+  -profile conda,slurm \
+  -N nick.youngblut@arcinstitute.org \
+  --input_dir /large_storage/multiomics/projects/lizard_wizard/test_data/Calcium_AAV-GCAMP_6wk_20240416 \
+  --output_dir /large_storage/multiomics/projects/lizard_wizard/test_output/Calcium_AAV-GCAMP_6wk_20240416 \
+  --test_image_count 2
+```
+
+# `Calcium_AAV-GCAMP_6wk_20240416`
+
+## Spot check 
+
+```bash
+nextflow run main.nf \
+  -profile conda,slurm \
+  -N nick.youngblut@arcinstitute.org \
+  --input_dir /large_storage/multiomics/projects/lizard_wizard/test_data/Calcium_AAV-GCAMP_6wk_20240416 \
+  --output_dir /large_storage/multiomics/projects/lizard_wizard/test_output/Calcium_AAV-GCAMP_6wk_20240416 \
+  --test_image_count 2
+```
 
 # `CMTC-Sph07162024-Plate3-HYB`
 

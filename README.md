@@ -272,7 +272,7 @@ nextflow run main.nf \
 ```bash
 nextflow run main.nf \
   -profile dev_moldev_2d,conda,slurm \
-  --test_image_count 3
+  --test_image_count 2
 ```
 
 ## Data 
@@ -293,3 +293,12 @@ nextflow run main.nf \
   * NAS
     * `/Volumes/ARC-DATA/LabDevices/220-4-ML/MD ImageXpress/CMTC/Sneha/Calcium_AAV-GCAMP_6wk_20240416`
 
+## Diagram
+
+To create a new diagram:
+
+```bash
+nextflow run main.nf -profile dev_moldev_3d,vm,conda -preview -with-dag
+```
+
+* Then convert html to png
