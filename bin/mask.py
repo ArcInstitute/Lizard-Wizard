@@ -53,7 +53,7 @@ def segment_image(im_min: np.ndarray, model: models.Cellpose, max_diameter: int)
     diameter = 300
     first_exceed = False
     original_model = model
-    while True:
+    while diameter <= max_diameter or not first_exceed:
         masks, _, _, _ = model.eval(im_min, diameter=diameter)
         if np.sum(masks) > 0:
             # success?
@@ -71,20 +71,19 @@ def segment_image(im_min: np.ndarray, model: models.Cellpose, max_diameter: int)
                     first_exceed = False
                 else:
                     msg = f"Segmentation Failure: Diameter {diameter} exceeds image dimensions {max_diameter}."
-                    logging.error(msg)
+                    logging.warning(msg)
                     return None, False
         else:
             diameter += 200
             logging.info(f"No object detected. Increasing diameter to {diameter} and retrying...")
-    # return failed
+    # failed to segment
     return None, False
 
-def mask_image(im_min: np.ndarray, file_type: str) -> np.ndarray:
+def mask_image(im_min: np.ndarray) -> np.ndarray:
     """
     Masks the image using the Cellpose model.
     Args:
         im_min: The minimum projection of the image data.
-        file_type: The type of file being processed.
     Returns:
         masks: The masks to apply to the image data. Returns None if segmentation fails.
     """
@@ -106,17 +105,18 @@ def mask_image(im_min: np.ndarray, file_type: str) -> np.ndarray:
     # Return the masks as a binary array
     return masks
 
-def create_minprojection(im: np.ndarray, img_file: str) -> np.ndarray:
+def create_minprojection(im: np.ndarray, img_file: str, file_type: str) -> np.ndarray:
     """
     Create a min projection of the image series and save it as a tiff file.
     Args:
         im: The image data.
         img_file: The path to the image file.
+        file_type: The type of file being processed.
     Returns:
         im_min: The min projection of the image series.
     """
     # Grab the min projection of the image series
-    if args.file_type.lower() == "moldev":
+    if file_type.lower() == "moldev":
         im_min = np.min(im, axis=0)
     else:
         im_min = np.squeeze(np.min(im, axis=1))
@@ -226,7 +226,7 @@ def main(args):
         outF.write(f"FRATE={frate}")
     
     # Create min projection
-    im_min = create_minprojection(im, args.img_file)
+    im_min = create_minprojection(im, args.img_file, args.file_type)
 
     # Save the image as a tif file, if no masking
     if args.use_2d:
@@ -242,7 +242,7 @@ def main(args):
         exit(0)
 
     # Mask the image
-    masks = mask_image(im_min, args.img_file, args.file_type)
+    masks = mask_image(im_min)
 
     # If segmentation/masking fails, write unmasked image
     if masks is None:
