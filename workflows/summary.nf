@@ -17,7 +17,8 @@ workflow SUMMARY_WF {
     )
 
     // Run Wizards Staff on final output
-    WIZARDS_STAFF(ch_calc_dff_f0_log.collect())
+    ch_frate = ch_img_mask.map{ name, frate, tif -> frate }.first()
+    WIZARDS_STAFF(ch_frate, ch_calc_dff_f0_log.collect())
 
     // summarize logs
     if("${secrets.OPENAI_API_KEY}" != "null"){
@@ -48,8 +49,10 @@ workflow SUMMARY_WF {
 process WIZARDS_STAFF {
     publishDir file(params.output_dir) / "wizards-staff", mode: "copy", overwrite: true, saveAs: { filename -> saveAsSummary(filename) }
     conda "envs/wizards_staff.yml"
+    label "process_low"
 
     input:
+    path frate
     path calc_dff_f0_log
 
     output:
@@ -57,7 +60,18 @@ process WIZARDS_STAFF {
 
     script:
     """
-    wizards-staff --output-dir output ${params.output_dir}
+    source ${frate}
+    wizards-staff \\
+      --threads ${task.cpus} \\
+      --frate \$FRATE \\
+      --p-th ${params.p_th} \\
+      --min-clusters ${params.min_clusters} \\
+      --max-clusters ${params.max_clusters} \\
+      --size-threshold ${params.size_threshold} \\
+      --percentage-threshold ${params.percentage_threshold} \\
+      --zscore-threshold ${params.zscore_threshold} \\
+      --output-dir output \\
+      ${params.output_dir}
     """
 }
 
