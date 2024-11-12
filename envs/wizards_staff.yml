@@ -1,0 +1,9 @@
+name: wizards_staff
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.11.9
+  - pip=24.0
+  - pip:
+    - git+ssh://git@github.com/arcinstitute/wizards-Staff.git

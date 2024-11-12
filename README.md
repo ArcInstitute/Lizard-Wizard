@@ -164,33 +164,25 @@ Below are test runs with sample datasets.
 Zeiss 3d:
 
 ```bash
-nextflow run main.nf \
-  -profile dev_zeiss_3d,vm,conda \
-  -work-dir /scratch/$(id -gn)/$(whoami)/nextflow-work/lizard-wizard
+nextflow run main.nf -profile dev_zeiss_3d,vm,conda
 ```
 
 Molecular Devices 3d:
 
 ```bash
-nextflow run main.nf \
-  -profile dev_moldev_3d,vm,conda \
-  -work-dir /scratch/$(id -gn)/$(whoami)/nextflow-work/lizard-wizard
+nextflow run main.nf -profile dev_moldev_3d,vm,conda
 ```
 
 Molecular Devices 2d:
 
 ```bash
-nextflow run main.nf \
-  -profile dev_moldev_2d,vm,conda \
-  -work-dir /scratch/$(id -gn)/$(whoami)/nextflow-work/lizard-wizard
+nextflow run main.nf -profile dev_moldev_2d,vm,conda
 ```
 
 Simulated Molecular Devices 2d:
 
 ```bash
-nextflow run main.nf \
-  -profile dev_moldev_2d_sim,vm,conda \
-  -work-dir /scratch/$(id -gn)/$(whoami)/nextflow-work/lizard-wizard
+nextflow run main.nf -profile dev_moldev_2d_sim,vm,conda
 ```
 
 ### Slurm runs
@@ -198,9 +190,7 @@ nextflow run main.nf \
 An example of processing Zeiss 3d images on the cluster:
 
 ```bash
-nextflow run main.nf \
-  -profile dev_zeiss_3d,conda,slurm \
-  -work-dir /scratch/$(id -gn)/$(whoami)/nextflow-work/lizard-wizard
+nextflow run main.nf -profile dev_zeiss_3d,conda,slurm
 ```
 
 # Resources
@@ -229,6 +219,7 @@ nextflow run main.nf \
 ## Output
 
 * Processed images and other files
+  * Output includes 
 * Written to the `--output_dir` directory
 
 ***
@@ -256,6 +247,8 @@ nextflow run main.nf -profile dev_moldev_2d,vm,conda
 ```
 
 ## Slurm runs
+
+Using `--test_image_count` to run the pipeline on randomly selected images.
 
 ```bash
 nextflow run main.nf \

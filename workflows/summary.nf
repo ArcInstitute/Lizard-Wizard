@@ -16,6 +16,9 @@ workflow SUMMARY_WF {
         CREATE_PER_SAMPLE_METADATA_TABLE.out.collect()
     )
 
+    // Run Wizards Staff on final output
+    WIZARDS_STAFF(ch_calc_dff_f0_log.collect())
+
     // summarize logs
     if("${secrets.OPENAI_API_KEY}" != "null"){
         // summarize moldev-concat logs
@@ -40,6 +43,22 @@ workflow SUMMARY_WF {
             LOG_SUMMARY_CAIMAN.output.md.collect()
         )
     }
+}
+
+process WIZARDS_STAFF {
+    publishDir file(params.output_dir) / "wizards-staff", mode: "copy", overwrite: true, saveAs: { filename -> saveAsSummary(filename) }
+    conda "envs/wizards_staff.yml"
+
+    input:
+    path calc_dff_f0_log
+
+    output:
+    path "output/*"
+
+    script:
+    """
+    wizards-staff --output-dir output ${params.output_dir}
+    """
 }
 
 process CREATE_FINAL_METADATA_TABLE {
