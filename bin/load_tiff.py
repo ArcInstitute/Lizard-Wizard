@@ -118,8 +118,14 @@ def load_image_data_moldev_concat(fname: str) -> tuple:
             # Search for the exposure information
             exposure_match = re.search(r'Exposure: (\d+(\.\d+)?)(\s*(msec|sec|ms|s))', description, re.IGNORECASE)
             if exposure_match:
-                frate = int(exposure_match.group(1))
-                exposure_units = exposure_match.group(4)
+                exposure_units = exposure_match.group(4).lower()
+                if exposure_units in ['sec', 's']:
+                    denom = 1.0
+                elif exposure_units in ['msec', 'ms']:
+                    denom = 1000.0
+                else:
+                    raise ValueError(f"Unknown exposure units '{exposure_units}' in metadata for file {fname}.")
+                frate = int(1 / (float(exposure_match.group(1)) / denom))
 
     # Raise an error if exposure information is not found
     if exposure_units is None or frate is None:

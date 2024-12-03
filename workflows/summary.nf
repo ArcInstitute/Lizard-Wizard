@@ -37,11 +37,16 @@ workflow SUMMARY_WF {
             ch_caiman_log.collect(),
             ch_calc_dff_f0_log.collect()
         )
+        // Wizards staff
+        LOG_SUMMARY_WIZARDS_STAFF(
+            WIZARDS_STAFF.out.log
+        )
         // summarize final logs
         LOG_SUMMARY_FINAL(
             ch_moldev_concat_md,
             LOG_SUMMARY_MASK.output.md.collect(),
-            LOG_SUMMARY_CAIMAN.output.md.collect()
+            LOG_SUMMARY_CAIMAN.output.md.collect(),
+            LOG_SUMMARY_WIZARDS_STAFF.output.md
         )
     }
 }
@@ -56,7 +61,8 @@ process WIZARDS_STAFF {
     path calc_dff_f0_log
 
     output:
-    path "output/*"
+    path "output/*",           emit: output
+    path "wizards-staff.log",  emit: log
 
     script:
     """
@@ -68,10 +74,11 @@ process WIZARDS_STAFF {
       --min-clusters ${params.min_clusters} \\
       --max-clusters ${params.max_clusters} \\
       --size-threshold ${params.size_threshold} \\
-      --percentage-threshold ${params.percentage_threshold} \\
+      --percent-threshold ${params.percentage_threshold} \\
       --zscore-threshold ${params.zscore_threshold} \\
       --output-dir output \\
-      ${params.output_dir}
+      ${params.output_dir} \\
+      > wizards-staff.log 2>&1
     """
 }
 
@@ -116,6 +123,7 @@ process LOG_SUMMARY_FINAL {
     path moldev_concat_log
     path mask_log
     path caiman_log
+    path ws_log
 
     output:
     path "output/final_summary.md",   emit: md
@@ -124,13 +132,41 @@ process LOG_SUMMARY_FINAL {
     script:
     """
     summarize_logs.py --model gpt-4o --final-summary \\
-      $moldev_concat_log $mask_log $caiman_log
+      $moldev_concat_log $mask_log $caiman_log $ws_log
     """
 
     stub:
     """
     mkdir -p output
     touch output/final_summary.md
+    """
+}
+
+process LOG_SUMMARY_WIZARDS_STAFF {
+    publishDir file(params.output_dir) / "logs" / "wizards-staff", mode: "copy", overwrite: true, pattern: "*.{md,html}", saveAs: { filename -> saveAsSummary(filename) }
+    publishDir file(params.output_dir) / "logs" / "wizards-staff" / "logs", mode: "copy", overwrite: true, pattern: "*.{log}", saveAs: { filename -> saveAsSummary(filename) }
+    conda "envs/summary.yml"
+    secret "OPENAI_API_KEY"
+
+    input:
+    path ws_log
+
+    output:
+    path "output/wizards-staff_summary.md",   emit: md
+    path "output/wizards-staff_summary.html", emit: html
+    path ws_log,                              emit: ws_log
+
+    script:
+    """
+    summarize_logs.py --model $params.llm \\
+      --output-prefix wizards-staff_summary \\
+      $ws_log
+    """
+
+    stub:
+    """
+    mkdir -p output
+    touch output/wizards-staff.md output/wizards-staff.html
     """
 }
 

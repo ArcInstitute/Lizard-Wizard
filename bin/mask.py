@@ -221,7 +221,8 @@ def main(args):
     else:
         raise ValueError(f"File type not recognized: {args.file_type}")
 
-    # Set write frate to a file
+    # Write frame rate to a file
+    logging.info(f"Frame rate: {frate}")
     with open("frate.txt", "w") as outF:
         outF.write(f"FRATE={frate}")
     
