@@ -252,7 +252,7 @@ def draw_dff_activity(act_dat: np.ndarray, act_filt_nsp_ids: np.array, max_dff_i
     plt.show()
 
     # Save plot
-    fig.savefig(os.path.join(output_dir, f'{base_fname}_df-f0-graph.tif'), format='tiff')
+    fig.savefig(os.path.join(output_dir, f'{base_fname}_df-f0-graph.png'), format='png')
     logging.disable(logging.NOTSET)
 
 def overlay_images(im_avg: np.ndarray, binary_overlay: np.ndarray, 
