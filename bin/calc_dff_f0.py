@@ -14,7 +14,7 @@ from tqdm import tqdm
 from load_czi import load_image_data_czi
 from load_tiff import load_image_data_moldev, load_image_data_moldev_concat
 from calc_dff_f0_utils import (
-    check_and_load_file, create_montage, convert_f_to_dff_perc, draw_dff_activity, 
+    check_and_load_file, calc_mean_signal, create_montage, convert_f_to_dff_perc, draw_dff_activity, 
     plot_montage, define_slice_extraction, save_dff_dat
 )
 
@@ -188,6 +188,16 @@ def main(args):
     f_dat, slice_indices, slice_extraction = define_slice_extraction(
         args.file_type, A, im, im_shape, im_bg
     )
+
+    # Process each z-slice of the image to compute mean fluorescence
+    f_dat = calc_mean_signal(im=im, 
+                             slice_indices = slice_indices, 
+                             slice_extraction = slice_extraction, 
+                             A = A, 
+                             dict_mask = dict_mask,
+                             im_bg = im_bg, 
+                             f_dat = f_dat, 
+                             fname = base_fname)
     
     # Convert fluorescence data to delta F/F
     dff_dat = convert_f_to_dff_perc(f_dat, perc=args.f_baseline_perc, win_sz=args.win_sz)

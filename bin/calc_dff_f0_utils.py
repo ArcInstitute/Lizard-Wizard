@@ -47,12 +47,46 @@ def define_slice_extraction(file_type: str, A: np.ndarray, im: np.ndarray,
         slice_indices = range(im.shape[1])
         slice_extraction = lambda im, z: im[0, z, 0, :, :]
 
+    return f_dat, slice_indices, slice_extraction
+
+def calc_mean_signal(im: np.ndarray, slice_indices: List[int], 
+                     slice_extraction: callable,  A: np.ndarray, dict_mask: dict,
+                     im_bg: np.ndarray, f_dat: np.ndarray, fname: str
+                     ) -> np.ndarray:
+    """
+    Calculate the mean fluorescence signal for each component in the image.
+    Args:
+        im: Image data.
+        slice_indices: Indices for slicing the image data.
+        slice_extraction: Function for extracting slices from the image data.
+        A: Spatial components matrix.
+        dict_mask: Dictionary containing masks for each component.
+        im_bg: Background image data.
+        f_dat: Fluorescence data matrix.
+        fname: Filename of the image being processed.
+    Returns:
+        f_dat: Fluorescence data matrix.
+    """
+    # Process each z-slice of the image to compute mean fluorescence
+    for z in slice_indices:
+        z_slice = slice_extraction(im, z)
+        for j in range(A.shape[1]):
+            try:
+                if dict_mask[j].shape == z_slice.shape:
+                    f_dat[j, z] = np.mean(z_slice[dict_mask[j]])
+                else:
+                    error_msg = f'Shape mismatch: z_slice shape {z_slice.shape} and mask shape {dict_mask[j].shape} do not match'
+                    logging.warning(error_msg)
+            except Exception as e:
+                error_msg = f"Error in calc_dff_f0 for file {fname}: {e}"
+                logging.warning(error_msg)
+    
     # Subtract background and adjust negative values
     f_dat -= im_bg
     f_dat[f_dat < 0] = 0
     f_dat += 2
 
-    return f_dat, slice_indices, slice_extraction
+    return f_dat
 
 def check_and_load_file(file_path: str) -> np.ndarray:
     """
