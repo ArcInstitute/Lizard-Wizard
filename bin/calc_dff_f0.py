@@ -174,15 +174,24 @@ def main(args):
     ## Load index of accepted components from previous filtering step
     logging.info(f"Reading index file: {args.cnm_idx_file}")
     idx = np.load(args.cnm_idx_file)
-    ## Filter the components
-    logging.info("Filtering montage components...")
-    filtered_im_st = im_st[idx, :, :]
-    n_images = len(filtered_im_st)
-    grid_shape = (np.ceil(np.sqrt(n_images)).astype(int), np.ceil(np.sqrt(n_images)).astype(int))
-    ### Create the montage for all components
-    logging.info("Creating montage image...")
-    montage_image = create_montage(filtered_im_st, im_avg, grid_shape)
-    plot_montage(montage_image, outfile_montage_filtered)
+    logging.info(f"Loaded index array: {idx}, shape: {idx.shape}")
+
+    if idx.size == 0:
+        logging.warning("Index file is empty. No components to filter.")
+    else:
+        ## Filter the components
+        logging.info("Filtering montage components...")
+        filtered_im_st = im_st[idx, :, :]
+        
+        if filtered_im_st.size == 0:
+            logging.error("Filtered component image stack is empty. Skipping montage creation.")
+        else:
+            n_images = len(filtered_im_st)
+            grid_shape = (np.ceil(np.sqrt(n_images)).astype(int), np.ceil(np.sqrt(n_images)).astype(int))
+            ### Create the montage for all components
+            logging.info("Creating montage image...")
+            montage_image = create_montage(filtered_im_st, im_avg, grid_shape)
+            plot_montage(montage_image, outfile_montage_filtered)
 
     # Define the slice extraction logic based on file type
     f_dat, slice_indices, slice_extraction = define_slice_extraction(
