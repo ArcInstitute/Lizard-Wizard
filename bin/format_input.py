@@ -126,11 +126,12 @@ def select_img_groups(file_groups: dict, test_image_names: str, test_image_count
         group_ids = np.random.choice(list(file_groups.keys()), test_image_count, replace=False)
     elif test_image_names is not None:
         # select specific image groups to process
-        logging.info("Selecting specific image groups")
+        logging.info("Selecting specific image groups based on --test-image-names")
         test_image_names = [str(x).strip() for x in test_image_names.split(',')]
         group_ids = [x for x in file_groups.keys() if x in test_image_names]
         if len(group_ids) == 0:
-            raise ValueError("No matching image groups found")
+            file_groups_str = ', '.join(file_groups.keys())
+            raise ValueError(f"No matching image groups found. Available groups: {file_groups_str}")
     # group files by basename
     if group_ids is not None:
         file_groups = {k: v for k, v in file_groups.items() if k in group_ids}

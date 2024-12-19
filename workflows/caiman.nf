@@ -55,7 +55,7 @@ process CALC_DFF_F0 {
       $cnm_idx \\
       $img_orig \\
       $img_masks \\
-      > ${img_masked.baseName}_calc-diff-f0.log 2>&1
+      2>&1 | tee ${img_masked.baseName}_calc-diff-f0.log
     """
     
     stub:
@@ -127,7 +127,7 @@ process CAIMAN {
       --min_pnr $params.min_pnr \\
       --ring_size_factor $params.ring_size_factor \\
       $frate $img_masked \\
-      > ${img_masked.baseName}_caiman.log 2>&1
+      2>&1 | tee ${img_masked.baseName}_caiman.log
     """
 
     stub:
@@ -142,15 +142,3 @@ process CAIMAN {
       ${img_masked.baseName}_caiman.log
     """
 }
-
-/*
-    path "caiman_output/*_cn_filter.npy"
-    path "caiman_output/*_cn_filter.tif"
-    path "caiman_output/*_cnm_C.npy"
-    path "caiman_output/*_cnm_S.npy"
-    path "caiman_output/*_cnm_idx.npy"
-    path "caiman_output/*_pnr_filter.npy"
-    path "caiman_output/*_masked_pnr_filter.tif"
-    path "caiman_output/correlation_pnr.png"
-    path "caiman_output/histogram_pnr_cn_filter.png"
-*/

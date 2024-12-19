@@ -78,7 +78,7 @@ process WIZARDS_STAFF {
       --zscore-threshold ${params.zscore_threshold} \\
       --output-dir output \\
       ${params.output_dir} \\
-      > wizards-staff.log 2>&1
+      2>&1 | tee wizards-staff.log
     """
 }
 
