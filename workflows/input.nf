@@ -64,7 +64,7 @@ process MOLDEV_CONCAT {
     concatenate_moldev_files.py \\
       --output output/${baseName}_full.tif \\
       $imagePaths \\
-      > ${baseName}_moldev-cat.log 2>&1
+      2>&1 | tee ${baseName}_moldev-cat.log
     """
 
     stub:
@@ -91,7 +91,7 @@ process FORMAT_INPUT{
     format_input.py $test_image_names $test_image_count \\
       --file-type $params.file_type \\
       $input_dir \\
-      > format_input.log 2>&1
+      2>&1 | tee format_input.log
     """
 
     stub:
