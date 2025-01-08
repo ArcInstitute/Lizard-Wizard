@@ -50,8 +50,10 @@ process MASK {
     export CELLPOSE_LOCAL_MODELS_PATH=models
     # run cellpose
     mask.py --file-type ${params.file_type} ${use_2d_str} \\
-      ${img_file} \\
-      2>&1 | tee ${img_basename}_mask.log
+            --min-object-size ${params.min_object_size} \\
+            --max-segment-retries ${params.max_segment_retries} \\
+            ${img_file} \\
+            2>&1 | tee ${img_basename}_mask.log
     """
 
     stub:
