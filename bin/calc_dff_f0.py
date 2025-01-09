@@ -5,6 +5,7 @@ from __future__ import print_function
 import os
 import logging
 import argparse
+from typing import Tuple
 ## 3rd party
 import numpy as np
 import tifffile
@@ -53,7 +54,7 @@ parser.add_argument('--win_sz', type=int, default=500,
                     help='Window size for the percent filter.')
 
 # functions
-def read_img_file(img_file: str, file_type: str) -> tuple:
+def read_img_file(img_file: str, file_type: str) -> Tuple[np.ndarray, float, tuple, list, np.ndarray]:
     """
     Read the image file and return the image data, frame rate, image shape, image size and average image.
     Args:
@@ -199,14 +200,16 @@ def main(args):
     )
 
     # Process each z-slice of the image to compute mean fluorescence
-    f_dat = calc_mean_signal(im=im, 
-                             slice_indices = slice_indices, 
-                             slice_extraction = slice_extraction, 
-                             A = A, 
-                             dict_mask = dict_mask,
-                             im_bg = im_bg, 
-                             f_dat = f_dat, 
-                             fname = base_fname)
+    f_dat = calc_mean_signal(
+        im=im, 
+        slice_indices = slice_indices, 
+        slice_extraction = slice_extraction, 
+        A = A, 
+        dict_mask = dict_mask,
+        im_bg = im_bg, 
+        f_dat = f_dat, 
+        fname = base_fname
+    )
     
     # Convert fluorescence data to delta F/F
     dff_dat = convert_f_to_dff_perc(f_dat, perc=args.f_baseline_perc, win_sz=args.win_sz)
@@ -229,7 +232,6 @@ def main(args):
         lw=0.55, 
         sz_per_neuron=0.5
     )
-
 
 ## script main
 if __name__ == '__main__':
