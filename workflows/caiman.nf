@@ -41,7 +41,12 @@ process CALC_DFF_F0 {
     path img_masks
     
     output:
-    path "output/*",                                emit: output
+    path "output/*_montage.png",                    emit: montage
+    path "output/*_im-st.tif",                      emit: im_st
+    path "output/*_montage-filtered.png",           emit: montage_filtered, optional: true
+    path "output/*_f-dat.npy",                      emit: f_dat, optional: true
+    path "output/*_dff-dat.npy",                    emit: dff_dat, optional: true
+    path "output/*_df-f0-graph.png",                emit: df_f0_graph, optional: true
     path "${img_masked.baseName}_calc-diff-f0.log", emit: log
 
     script:
