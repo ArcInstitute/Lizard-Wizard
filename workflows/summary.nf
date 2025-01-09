@@ -18,7 +18,7 @@ workflow SUMMARY_WF {
 
     // Run Wizards Staff on final output
     ch_frate = ch_img_mask.map{ name, frate, tif -> frate }.first()
-    WIZARDS_STAFF(ch_frate, ch_calc_dff_f0_log.collect())
+    WIZARDS_STAFF(ch_frate, ch_calc_dff_f0_log.collect(), ch_calc_dff_f0_log.count())
 
     // summarize logs
     if("${secrets.OPENAI_API_KEY}" != "null"){
@@ -55,11 +55,12 @@ process WIZARDS_STAFF {
     publishDir file(params.output_dir) / "wizards-staff", mode: "copy", overwrite: true, saveAs: { filename -> saveAsSummary(filename) }
     label "wizards_staff_env"
     label "process_low"
-    cpus { calc_dff_f0_log.count() > 48 ? 48 : calc_dff_f0_log.count() }
+    cpus { calc_dff_f0_log_count > 48 ? 48 : calc_dff_f0_log_count }
 
     input:
     path frate
     path calc_dff_f0_log
+    val calc_dff_f0_log_count
 
     output:
     path "output/*",           emit: output
@@ -67,7 +68,6 @@ process WIZARDS_STAFF {
 
     script:
     """
-    exit 1
     source ${frate}
     wizards-staff \\
       --threads ${task.cpus} \\
