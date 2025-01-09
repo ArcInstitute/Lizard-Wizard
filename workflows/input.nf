@@ -49,7 +49,7 @@ workflow INPUT_WF {
 }
 
 process MOLDEV_CONCAT {
-    conda "envs/cellpose.yml"
+    label "cellpose_env"
     label "process_medium_mem"
 
     input:
@@ -74,7 +74,7 @@ process MOLDEV_CONCAT {
 }
 
 process FORMAT_INPUT{
-    conda "envs/cellpose.yml"
+    label "cellpose_env"
 
     input:
     path input_dir

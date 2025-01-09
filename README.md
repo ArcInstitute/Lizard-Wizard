@@ -156,7 +156,7 @@ nextflow run main.nf \
 
 Below are test runs with sample datasets.
 
-### Local runs 
+### Local runs on Chimera
 
 > `Local` means using the resources in your current session, instead of submitting jobs to the cluster.
 >  Note: you might need to increase the number of CPUs and memory in order to run the pipeline locally.
@@ -164,33 +164,33 @@ Below are test runs with sample datasets.
 Zeiss 3d:
 
 ```bash
-nextflow run main.nf -profile dev_zeiss_3d,vm,conda
+nextflow run main.nf -profile dev_zeiss_3d,chimera,vm,conda
 ```
 
 Molecular Devices 3d:
 
 ```bash
-nextflow run main.nf -profile dev_moldev_3d,vm,conda
+nextflow run main.nf -profile dev_moldev_3d,chimera,vm,conda
 ```
 
 Molecular Devices 2d:
 
 ```bash
-nextflow run main.nf -profile dev_moldev_2d,vm,conda
+nextflow run main.nf -profile dev_moldev_2d,chimera,vm,conda
 ```
 
 Simulated Molecular Devices 2d:
 
 ```bash
-nextflow run main.nf -profile dev_moldev_2d_sim,vm,conda
+nextflow run main.nf -profile dev_moldev_2d_sim,chimera,vm,conda
 ```
 
-### Slurm runs
+### SLURM runs on Chimera
 
 An example of processing Zeiss 3d images on the cluster:
 
 ```bash
-nextflow run main.nf -profile dev_zeiss_3d,conda,slurm
+nextflow run main.nf -profile dev_zeiss_3d,chimera,slurm,conda
 ```
 
 # Resources
@@ -231,19 +231,19 @@ nextflow run main.nf -profile dev_zeiss_3d,conda,slurm
 Zeiss 3d:
 
 ```bash
-nextflow run main.nf -profile dev_zeiss_3d,vm,conda 
+nextflow run main.nf -profile dev_zeiss_3d,chimera,vm,conda
 ```
 
 Molecular devices 3d:
 
 ```bash
-nextflow run main.nf -profile dev_moldev_3d,vm,conda
+nextflow run main.nf -profile dev_moldev_3d,chimera,vm,conda
 ```
 
 Molecular devices 2d:
 
 ```bash
-nextflow run main.nf -profile dev_moldev_2d,vm,conda
+nextflow run main.nf -profile dev_moldev_2d,chimera,vm,conda
 ```
 
 ## Slurm runs
@@ -252,19 +252,19 @@ Using `--test_image_count` to run the pipeline on randomly selected images.
 
 ```bash
 nextflow run main.nf \
-  -profile dev_zeiss_3d,conda,slurm \
+  -profile dev_zeiss_3d,conda,slurm,chimera \
   --test_image_count 3
 ```
 
 ```bash
 nextflow run main.nf \
-  -profile dev_moldev_3d,conda,slurm \
+  -profile dev_moldev_3d,conda,slurm,chimera \
   --test_image_count 3
 ```
 
 ```bash
 nextflow run main.nf \
-  -profile dev_moldev_2d,conda,slurm \
+  -profile dev_moldev_2d,conda,slurm,chimera \
   --test_image_count 2
 ```
 
@@ -291,7 +291,7 @@ nextflow run main.nf \
 To create a new diagram:
 
 ```bash
-nextflow run main.nf -profile dev_moldev_3d,vm,conda -preview -with-dag
+nextflow run main.nf -profile dev_moldev_3d,vm,conda,chimera -preview -with-dag
 ```
 
 * Then convert html to png

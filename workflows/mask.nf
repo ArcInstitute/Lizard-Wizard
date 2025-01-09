@@ -27,7 +27,7 @@ def saveAsMask(filename) {
 // Mask an image using cellpose 
 process MASK {
     publishDir file(params.output_dir) / "mask", mode: "copy", overwrite: true, saveAs: { filename -> saveAsMask(filename) } 
-    conda "envs/cellpose.yml"
+    label "cellpose_env"
     label "process_medium_mem"
 
     input:
@@ -62,7 +62,7 @@ process MASK {
 
 // Download cellpose models
 process DOWNLOAD_CELLPOSE_MODELS {
-    conda "envs/cellpose.yml"
+    label "cellpose_env"
 
     output:
     path "models/*"

@@ -53,8 +53,9 @@ workflow SUMMARY_WF {
 
 process WIZARDS_STAFF {
     publishDir file(params.output_dir) / "wizards-staff", mode: "copy", overwrite: true, saveAs: { filename -> saveAsSummary(filename) }
-    conda "envs/wizards_staff.yml"
+    label "wizards_staff_env"
     label "process_low"
+    cpus { calc_dff_f0_log.count() > 48 ? 48 : calc_dff_f0_log.count() }
 
     input:
     path frate
@@ -66,6 +67,7 @@ process WIZARDS_STAFF {
 
     script:
     """
+    exit 1
     source ${frate}
     wizards-staff \\
       --threads ${task.cpus} \\
@@ -84,7 +86,7 @@ process WIZARDS_STAFF {
 
 process CREATE_FINAL_METADATA_TABLE {
     publishDir file(params.output_dir), mode: "copy", overwrite: true
-    conda "envs/summary.yml"
+    label "summary_env"
 
     input:
     path metadata
@@ -100,7 +102,7 @@ process CREATE_FINAL_METADATA_TABLE {
 }
 
 process CREATE_PER_SAMPLE_METADATA_TABLE {
-    conda "envs/summary.yml"
+    label "summary_env"
 
     input:
     tuple val(img_basename), path(frate), path(img_masked)
@@ -116,7 +118,7 @@ process CREATE_PER_SAMPLE_METADATA_TABLE {
 
 process LOG_SUMMARY_FINAL {
     publishDir file(params.output_dir) / "logs", mode: "copy", overwrite: true, saveAs: { filename -> saveAsSummary(filename) }
-    conda "envs/summary.yml"
+    label "summary_env"
     secret "OPENAI_API_KEY"
 
     input:
@@ -145,7 +147,7 @@ process LOG_SUMMARY_FINAL {
 process LOG_SUMMARY_WIZARDS_STAFF {
     publishDir file(params.output_dir) / "logs" / "wizards-staff", mode: "copy", overwrite: true, pattern: "*.{md,html}", saveAs: { filename -> saveAsSummary(filename) }
     publishDir file(params.output_dir) / "logs" / "wizards-staff" / "logs", mode: "copy", overwrite: true, pattern: "*.{log}", saveAs: { filename -> saveAsSummary(filename) }
-    conda "envs/summary.yml"
+    label "summary_env"
     secret "OPENAI_API_KEY"
 
     input:
@@ -173,7 +175,7 @@ process LOG_SUMMARY_WIZARDS_STAFF {
 process LOG_SUMMARY_CAIMAN {
     publishDir file(params.output_dir) / "logs" / "caiman", mode: "copy", overwrite: true, pattern: "*.{md,html}", saveAs: { filename -> saveAsSummary(filename) }
     publishDir file(params.output_dir) / "logs" / "caiman" / "logs", mode: "copy", overwrite: true, pattern: "*.{log}", saveAs: { filename -> saveAsSummary(filename) }
-    conda "envs/summary.yml"
+    label "summary_env"
     secret "OPENAI_API_KEY"
 
     input:
@@ -203,7 +205,7 @@ process LOG_SUMMARY_CAIMAN {
 process LOG_SUMMARY_MASK {
     publishDir file(params.output_dir) / "logs" / "mask", mode: "copy", overwrite: true, pattern: "*.{md,html}", saveAs: { filename -> saveAsSummary(filename) }
     publishDir file(params.output_dir) / "logs" / "mask" / "logs", mode: "copy", overwrite: true, pattern: "*.{log}", saveAs: { filename -> saveAsSummary(filename) }
-    conda "envs/summary.yml"
+    label "summary_env"
     secret "OPENAI_API_KEY"
 
     input:
@@ -231,7 +233,7 @@ process LOG_SUMMARY_MASK {
 process LOG_SUMMARY_MOLDEV_CONCAT {
     publishDir file(params.output_dir) / "logs" / "moldev-concat", mode: "copy", overwrite: true, pattern: "*.{md,html}", saveAs: { filename -> saveAsSummary(filename) }
     publishDir file(params.output_dir) / "logs" / "moldev-concat" / "logs", mode: "copy", overwrite: true, pattern: "*.{log}", saveAs: { filename -> saveAsSummary(filename) }
-    conda "envs/summary.yml"
+    label "summary_env"
     secret "OPENAI_API_KEY"
 
     input:
