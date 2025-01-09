@@ -9,6 +9,7 @@ import tifffile
 ## 3rd party
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.ndimage import label, sum as ndi_sum
 from cellpose import models, io
 ## source
 from load_czi import load_image_data_czi
@@ -35,6 +36,10 @@ parser.add_argument('--file-type', type=str, default='zeiss',
                     help='Type of image file')
 parser.add_argument('--use-2d', action='store_true',
                     help='2d, so no masking')
+parser.add_argument('--min-object-size', type=int, default=500,
+                    help='Minimum size of objects in pixels for successful segmentation')
+parser.add_argument('--max-segment-retries', type=int, default=3,
+                    help='Maximum number of retries for segmentation if objects are below the threshold')
 
 # functions
 def segment_image(im_min: np.ndarray, model: models.Cellpose, max_diameter: int) -> tuple:
@@ -79,11 +84,13 @@ def segment_image(im_min: np.ndarray, model: models.Cellpose, max_diameter: int)
     # failed to segment
     return None, False
 
-def mask_image(im_min: np.ndarray) -> np.ndarray:
+def mask_image(im_min: np.ndarray, min_object_size: int=1000, max_segment_retries: int=3) -> np.ndarray:
     """
     Masks the image using the Cellpose model.
     Args:
         im_min: The minimum projection of the image data.
+        min_object_size: The minimum object size to consider for successful segmentation. Default is 1000.
+        max_retries: The maximum number of retries to attempt segmentation. Default is 3.
     Returns:
         masks: The masks to apply to the image data. Returns None if segmentation fails.
     """
@@ -101,6 +108,33 @@ def mask_image(im_min: np.ndarray) -> np.ndarray:
     # Check if segmentation was successful        
     if not success:
         logging.error(f"Segmentation failed. Proceeding without creating mask.")
+        return None
+
+    # Detect object sizes
+    object_sizes = detect_object_sizes(masks)
+    logging.info(f"Object sizes detected: {object_sizes}")
+
+    # Check if all objects are larger than the threshold
+    retry_count = 0
+    while all(size < min_object_size for size in object_sizes) and retry_count < max_segment_retries:
+        logging.warning(f"All objects are smaller than the threshold ({min_object_size}). Retrying segmentation attempt #{retry_count + 1}...")
+        
+        # Perform segmentation
+        masks, success = segment_image(im_min, model, max_diameter)
+
+        # Check if segmentation was successful by detecting object sizes
+        object_sizes = detect_object_sizes(masks)
+        logging.info(f"Object sizes detected: {object_sizes} for retry #{retry_count + 1}")
+
+        # Increment the retry count
+        retry_count += 1
+
+    # Log the success message after exiting the loop
+    if any(size >= min_object_size for size in object_sizes):
+        logging.info(f"Successfully segmented objects larger than the threshold ({min_object_size}) after {retry_count} attempts.")
+    else:
+        logging.error(f"Segmentation failed after {retry_count} retries. No objects met the threshold ({min_object_size}). Proceeding without creating mask.")
+        return None
 
     # Return the masks as a binary array
     return masks
@@ -206,6 +240,18 @@ def format_masks(im: np.ndarray, im_min: np.ndarray, masks: np.ndarray,
     tifffile.imwrite(outfile, masked_im)
     logging.info(f"Masked image saved to {outfile}")
 
+def detect_object_sizes(mask: np.ndarray) -> list:
+    """
+    Detects the sizes of objects in the given mask.
+    Args:
+        mask: Binary mask where objects are labeled as 1.
+    Returns:
+        A list of object sizes (number of pixels per object).
+    """
+    labeled_mask, num_features = label(mask)
+    object_sizes = [ndi_sum(mask, labeled_mask, index=i + 1) for i in range(num_features)]
+    return object_sizes
+
 def main(args):
     logging.info("Starting mask.py...")
     # Set up the cellpose logger
@@ -243,7 +289,7 @@ def main(args):
         exit(0)
 
     # Mask the image
-    masks = mask_image(im_min)
+    masks = mask_image(im_min, args.min_object_size, args.max_segment_retries)
 
     # If segmentation/masking fails, write unmasked image
     if masks is None:
