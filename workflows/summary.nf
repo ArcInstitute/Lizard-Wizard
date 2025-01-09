@@ -54,8 +54,6 @@ workflow SUMMARY_WF {
 process WIZARDS_STAFF {
     publishDir file(params.output_dir) / "wizards-staff", mode: "copy", overwrite: true, saveAs: { filename -> saveAsSummary(filename) }
     label "wizards_staff_env"
-    label "process_low"
-    cpus { calc_dff_f0_log_count > 48 ? 48 : calc_dff_f0_log_count }
 
     input:
     path frate
@@ -63,7 +61,7 @@ process WIZARDS_STAFF {
     val calc_dff_f0_log_count
 
     output:
-    path "output/*",           emit: output
+    path "results/*",          emit: output
     path "wizards-staff.log",  emit: log
 
     script:
@@ -78,7 +76,7 @@ process WIZARDS_STAFF {
       --size-threshold ${params.size_threshold} \\
       --percent-threshold ${params.percentage_threshold} \\
       --zscore-threshold ${params.zscore_threshold} \\
-      --output-dir output \\
+      --output-dir results \\
       ${params.output_dir} \\
       2>&1 | tee wizards-staff.log
     """
