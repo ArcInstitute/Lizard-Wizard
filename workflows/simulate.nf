@@ -17,7 +17,7 @@ def saveAsBase(filename){
 
 process SIMULATE_EVENTS {
     publishDir file(params.output_dir) / "simulation", mode: "copy", overwrite: true, saveAs: { filename -> saveAsBase(filename) }
-    conda "envs/cellpose.yml"
+    label "cellpose_env"
 
     output:
     path "output/*.tif", emit: tif

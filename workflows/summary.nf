@@ -18,7 +18,7 @@ workflow SUMMARY_WF {
 
     // Run Wizards Staff on final output
     ch_frate = ch_img_mask.map{ name, frate, tif -> frate }.first()
-    WIZARDS_STAFF(ch_frate, ch_calc_dff_f0_log.collect())
+    WIZARDS_STAFF(ch_frate, ch_calc_dff_f0_log.collect(), ch_calc_dff_f0_log.count())
 
     // summarize logs
     if("${secrets.OPENAI_API_KEY}" != "null"){
@@ -53,15 +53,15 @@ workflow SUMMARY_WF {
 
 process WIZARDS_STAFF {
     publishDir file(params.output_dir) / "wizards-staff", mode: "copy", overwrite: true, saveAs: { filename -> saveAsSummary(filename) }
-    conda "envs/wizards_staff.yml"
-    label "process_low"
+    label "wizards_staff_env"
 
     input:
     path frate
     path calc_dff_f0_log
+    val calc_dff_f0_log_count
 
     output:
-    path "output/*",           emit: output
+    path "results/*",          emit: output
     path "wizards-staff.log",  emit: log
 
     script:
@@ -76,7 +76,7 @@ process WIZARDS_STAFF {
       --size-threshold ${params.size_threshold} \\
       --percent-threshold ${params.percentage_threshold} \\
       --zscore-threshold ${params.zscore_threshold} \\
-      --output-dir output \\
+      --output-dir results \\
       ${params.output_dir} \\
       2>&1 | tee wizards-staff.log
     """
@@ -84,7 +84,7 @@ process WIZARDS_STAFF {
 
 process CREATE_FINAL_METADATA_TABLE {
     publishDir file(params.output_dir), mode: "copy", overwrite: true
-    conda "envs/summary.yml"
+    label "summary_env"
 
     input:
     path metadata
@@ -100,7 +100,7 @@ process CREATE_FINAL_METADATA_TABLE {
 }
 
 process CREATE_PER_SAMPLE_METADATA_TABLE {
-    conda "envs/summary.yml"
+    label "summary_env"
 
     input:
     tuple val(img_basename), path(frate), path(img_masked)
@@ -116,7 +116,7 @@ process CREATE_PER_SAMPLE_METADATA_TABLE {
 
 process LOG_SUMMARY_FINAL {
     publishDir file(params.output_dir) / "logs", mode: "copy", overwrite: true, saveAs: { filename -> saveAsSummary(filename) }
-    conda "envs/summary.yml"
+    label "summary_env"
     secret "OPENAI_API_KEY"
 
     input:
@@ -145,7 +145,7 @@ process LOG_SUMMARY_FINAL {
 process LOG_SUMMARY_WIZARDS_STAFF {
     publishDir file(params.output_dir) / "logs" / "wizards-staff", mode: "copy", overwrite: true, pattern: "*.{md,html}", saveAs: { filename -> saveAsSummary(filename) }
     publishDir file(params.output_dir) / "logs" / "wizards-staff" / "logs", mode: "copy", overwrite: true, pattern: "*.{log}", saveAs: { filename -> saveAsSummary(filename) }
-    conda "envs/summary.yml"
+    label "summary_env"
     secret "OPENAI_API_KEY"
 
     input:
@@ -173,7 +173,7 @@ process LOG_SUMMARY_WIZARDS_STAFF {
 process LOG_SUMMARY_CAIMAN {
     publishDir file(params.output_dir) / "logs" / "caiman", mode: "copy", overwrite: true, pattern: "*.{md,html}", saveAs: { filename -> saveAsSummary(filename) }
     publishDir file(params.output_dir) / "logs" / "caiman" / "logs", mode: "copy", overwrite: true, pattern: "*.{log}", saveAs: { filename -> saveAsSummary(filename) }
-    conda "envs/summary.yml"
+    label "summary_env"
     secret "OPENAI_API_KEY"
 
     input:
@@ -203,7 +203,7 @@ process LOG_SUMMARY_CAIMAN {
 process LOG_SUMMARY_MASK {
     publishDir file(params.output_dir) / "logs" / "mask", mode: "copy", overwrite: true, pattern: "*.{md,html}", saveAs: { filename -> saveAsSummary(filename) }
     publishDir file(params.output_dir) / "logs" / "mask" / "logs", mode: "copy", overwrite: true, pattern: "*.{log}", saveAs: { filename -> saveAsSummary(filename) }
-    conda "envs/summary.yml"
+    label "summary_env"
     secret "OPENAI_API_KEY"
 
     input:
@@ -231,7 +231,7 @@ process LOG_SUMMARY_MASK {
 process LOG_SUMMARY_MOLDEV_CONCAT {
     publishDir file(params.output_dir) / "logs" / "moldev-concat", mode: "copy", overwrite: true, pattern: "*.{md,html}", saveAs: { filename -> saveAsSummary(filename) }
     publishDir file(params.output_dir) / "logs" / "moldev-concat" / "logs", mode: "copy", overwrite: true, pattern: "*.{log}", saveAs: { filename -> saveAsSummary(filename) }
-    conda "envs/summary.yml"
+    label "summary_env"
     secret "OPENAI_API_KEY"
 
     input:
