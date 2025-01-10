@@ -6,15 +6,15 @@ workflow CAIMAN_WF {
 
     main:
     // Run CAIMAN
-    CAIMAN(ch_img_orig, ch_img_masked, ch_img_masks)
+    CAIMAN(ch_img_masked, ch_img_masks, ch_img_orig)
 
     // run calc_dff_f0
     CALC_DFF_F0(
-        ch_img_masked,
-        CAIMAN.out.cnm_A, 
-        CAIMAN.out.cnm_idx,
+        CAIMAN.out.img_masked,
+        CAIMAN.out.img_masks,
         CAIMAN.out.img_orig,
-        CAIMAN.out.img_masks
+        CAIMAN.out.cnm_A, 
+        CAIMAN.out.cnm_idx
     )
 
     emit:
@@ -35,10 +35,10 @@ process CALC_DFF_F0 {
    
     input:
     tuple val(img_basename), path(frate), path(img_masked)
+    path img_masks
+    path img_orig
     path cnm_A
     path cnm_idx
-    path img_orig
-    path img_masks
     
     output:
     path "output/*_montage.png",                    emit: montage
@@ -92,25 +92,25 @@ process CAIMAN {
     label "process_highest"
 
     input:
-    path img_orig
     tuple val(img_basename), path(frate), path(img_masked)
     path img_masks
+    path img_orig
 
     output:
-    path img_orig,                                      emit: img_orig
-    path img_masked,                                    emit: img_masked
-    path img_masks,                                     emit: img_masks
-    path "caiman_output/*_cnm-A.npy",                   emit: cnm_A
-    path "caiman_output/*_cnm-C.npy",                   emit: cnm_C
-    path "caiman_output/*_cnm-S.npy",                   emit: cnm_S
-    path "caiman_output/*_cnm-idx.npy",                 emit: cnm_idx
-    path "caiman_output/*_cn-filter.npy",               emit: cn_filter
-    path "caiman_output/*_pnr-filter.npy",              emit: pnr_filter
-    path "caiman_output/*_correlation-pnr.png",         emit: corr_pnr
-    path "caiman_output/*_histogram-pnr-cn-filter.png", emit: histo_pnr
-    path "caiman_output/*_cnm-traces.png",              emit: traces, optional: true
-    path "caiman_output/*_cnm-denoised-traces.png",     emit: dn_traces, optional: true
-    path "${img_masked.baseName}_caiman.log",           emit: log
+    tuple val(img_basename), path(frate), path(img_masked), emit: img_masked
+    path img_masks,                                         emit: img_masks
+    path img_orig,                                          emit: img_orig
+    path "caiman_output/*_cnm-A.npy",                       emit: cnm_A
+    path "caiman_output/*_cnm-C.npy",                       emit: cnm_C
+    path "caiman_output/*_cnm-S.npy",                       emit: cnm_S
+    path "caiman_output/*_cnm-idx.npy",                     emit: cnm_idx
+    path "caiman_output/*_cn-filter.npy",                   emit: cn_filter
+    path "caiman_output/*_pnr-filter.npy",                  emit: pnr_filter
+    path "caiman_output/*_correlation-pnr.png",             emit: corr_pnr
+    path "caiman_output/*_histogram-pnr-cn-filter.png",     emit: histo_pnr
+    path "caiman_output/*_cnm-traces.png",                  emit: traces, optional: true
+    path "caiman_output/*_cnm-denoised-traces.png",         emit: dn_traces, optional: true
+    path "${img_masked.baseName}_caiman.log",               emit: log
 
     script:
     """
