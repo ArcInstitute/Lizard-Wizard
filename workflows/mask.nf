@@ -52,6 +52,8 @@ process MASK {
     mask.py --file-type ${params.file_type} ${use_2d_str} \\
             --min-object-size ${params.min_object_size} \\
             --max-segment-retries ${params.max_segment_retries} \\
+            --start-diameter ${params.start_diameter} \\
+            --diameter-step ${params.diameter_step} \\
             ${img_file} \\
             2>&1 | tee ${img_basename}_mask.log
     """
