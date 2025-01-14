@@ -11,3 +11,4 @@ archive/
 screenlog.*
 *.pyc
 bin/get_metadata.py
+*.txt
