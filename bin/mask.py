@@ -70,7 +70,7 @@ def segment_image(im_min: np.ndarray, model: models.Cellpose, max_diameter: int,
     while diameter <= max_diameter or not first_exceed:
         masks, _, _, _ = model.eval(im_min, diameter=diameter)
         if np.sum(masks) > 0:
-            # success?
+            logging.info(f"Segmentation succeeded with diameter {diameter}.")
             return masks, True, diameter
         
         elif diameter > max_diameter:
@@ -133,28 +133,33 @@ def mask_image(im_min: np.ndarray, min_object_size: int=500, max_segment_retries
 
     # Check if all objects are larger than the threshold
     retry_count = 0
-    while all(size < min_object_size for size in object_sizes) and retry_count < max_segment_retries:
-        logging.warning(f"All objects are smaller than the threshold ({min_object_size}). Retrying segmentation attempt #{retry_count + 1}...")
+    while retry_count < max_segment_retries:
+        valid_sizes = [size for size in object_sizes if size is not None]
+
+        if all(size < min_object_size for size in valid_sizes):
+            logging.warning(f"All objects are smaller than the threshold ({min_object_size}). Retrying segmentation attempt #{retry_count + 1}...")
         
-        if final_diameter >= max_diameter:
-            logging.warning(f"Diameter exceeded max dimensions. Resetting to {max_diameter}.")
-            final_diameter = max_diameter
+            if final_diameter >= max_diameter:
+                logging.warning(f"Diameter exceeded max dimensions. Resetting to {max_diameter}.")
+                final_diameter = max_diameter
+            else:
+                final_diameter += diameter_step
+                logging.info(f"Increasing diameter to {final_diameter} for retry #{retry_count + 1}...")
+
+            # Perform segmentation
+            masks, success, final_diameter = segment_image(im_min, model, max_diameter, start_diameter=final_diameter)
+            
+            # Check if segmentation was successful by detecting object sizes
+            object_sizes = detect_object_sizes(masks)
+            logging.info(f"Object sizes detected: {object_sizes} for retry #{retry_count + 1}")
         else:
-            final_diameter += diameter_step
-            logging.info(f"Increasing diameter to {final_diameter} for retry #{retry_count + 1}...")
-
-        # Perform segmentation
-        masks, success, final_diameter = segment_image(im_min, model, max_diameter, start_diameter=final_diameter)
-
-        # Check if segmentation was successful by detecting object sizes
-        object_sizes = detect_object_sizes(masks)
-        logging.info(f"Object sizes detected: {object_sizes} for retry #{retry_count + 1}")
+            break  # Exit if valid objects are detected
 
         # Increment the retry count
         retry_count += 1
 
     # Log the success message after exiting the loop
-    if any(size >= min_object_size for size in object_sizes):
+    if any(size >= min_object_size for size in valid_sizes):
         logging.info(f"Successfully segmented objects larger than the threshold ({min_object_size}) after {retry_count} attempts.")
     else:
         logging.error(f"Segmentation failed after {retry_count} retries. No objects met the threshold ({min_object_size}). Proceeding without creating mask.")
@@ -272,6 +277,10 @@ def detect_object_sizes(mask: np.ndarray) -> list:
     Returns:
         A list of object sizes (number of pixels per object).
     """
+    if mask is None or mask.sum() == 0:
+        logging.warning("Mask is empty. No objects detected.")
+        return []
+
     labeled_mask, num_features = label(mask)
     object_sizes = [ndi_sum(mask, labeled_mask, index=i + 1) for i in range(num_features)]
     return object_sizes
