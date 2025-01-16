@@ -105,11 +105,12 @@ nextflow secrets set OPENAI_API_KEY $OPENAI_API_KEY
 
 ## Example Spot-Check Run
 
-A spot check is a small run of the pipeline to ensure that the pipeline parameters are set correctly.
+* A spot check is a small run of the pipeline to ensure that the pipeline parameters are set correctly.
+* This assumes that you are running the pipeline on the `Chimera` compute cluster.
 
 ```bash
 nextflow run main.nf \
-  -profile conda,slurm \
+  -profile conda,slurm,chimera \
   -work-dir /scratch/$(id -gn)/$(whoami)/nextflow-work/lizard-wizard \
   --input_dir /path/to/image/files/ \
   --output_dir /path/to/output/location/ \
@@ -119,6 +120,9 @@ nextflow run main.nf \
 
 **Notes:**
 
+* Replace `--input_dir` and `--output_dir` with the correct paths.
+  * `--input_dir` is the directory containing the images.
+  * `--output_dir` is the directory where the output will be written.
 * Replace `YOUR_EMAIL_HERE@arcinstitute.org` with your email.
   * It is used to send the pipeline status updates (e.g., error and completion messages).
   * You do not have to use `-N`, but it is recommended.
@@ -126,9 +130,12 @@ nextflow run main.nf \
   * You can also select specific images by using `--test_image_names` 
     * e.g., `--test_image_names 10xGCaMP-6wk-F08_s1_FITC,10xGCaMP-6wk-D10_s1_FITC`.
 * See `./nextflow.config` for all input parameters (e.g., specifying the input file type).
-* **Make sure** to change the `--input_dir` and `--output_dir` paths to the correct locations.
 * Use `--file_type zeiss` if the input files are from the Zeiss microscope.
 * If the data is 2d instead of 3d (default), use `--use_2d true`.
+* `-profile` specifies the profiles to use:
+  * `conda` - use conda environments
+  * `slurm` - use the SLURM scheduler
+  * `chimera` - parameters specific to the Chimera cluster
 
 ## Example Full Run
 
@@ -136,7 +143,7 @@ After running the spot check, you can process the full dataset.
 
 ```bash
 nextflow run main.nf \
-  -profile conda,slurm \
+  -profile conda,slurm,chimera \
   -work-dir /scratch/$(id -gn)/$(whoami)/nextflow-work/lizard-wizard \
   --input_dir /path/to/image/files/ \
   --output_dir /path/to/output/location/ \
@@ -145,11 +152,11 @@ nextflow run main.nf \
 ```
 
 **Notes:**
+* **Make sure** to change the `--input_dir` and `--output_dir` paths to the correct locations.
 * Be sure to replace `YOUR_EMAIL_HERE@arcinstitute.org` with your email.
 * The `-resume` flag will prevent the need to re-run the samples included in the spot check, 
   since they are already processed.
   * For this to work, the `--output_dir` directory must be the same as the spot check run.
-* **Make sure** to change the `--input_dir` and `--output_dir` paths to the correct locations.
 
 
 ## Test runs
@@ -158,8 +165,10 @@ Below are test runs with sample datasets.
 
 ### Local runs on Chimera
 
-> `Local` means using the resources in your current session, instead of submitting jobs to the cluster.
->  Note: you might need to increase the number of CPUs and memory in order to run the pipeline locally.
+Notes:
+* `Local` means using the resources in your current session, instead of submitting jobs to the cluster.
+*  You might need to increase the number of CPUs and memory in order to run the pipeline locally.
+* The `dev_*` profiles set the input and output for the test runs.
 
 Zeiss 3d:
 
@@ -211,9 +220,10 @@ nextflow run main.nf -profile dev_zeiss_3d,chimera,slurm,conda
   * If `moldev`, concatenate files
   * If `zeiss`, load images
 * For each image:
-  * Mask via Cellpose
-  * Run CaImAn
+  * Mask via [Cellpose](https://github.com/MouseLand/cellpose)
+  * Run [CaImAn](https://github.com/flatironinstitute/CaImAn)
   * Calc F/F0 on CaImAn output
+  * Run [Wizards Staff](https://github.com/arcinstitute/Wizards-Staff) on the F/F0 output 
   * Summarize the logs (optional)
 
 ## Output
@@ -221,6 +231,7 @@ nextflow run main.nf -profile dev_zeiss_3d,chimera,slurm,conda
 * Processed images and other files
   * Output includes 
 * Written to the `--output_dir` directory
+
 
 ***
 
