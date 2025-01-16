@@ -6,4 +6,5 @@ dependencies:
   - python=3.11.9
   - pip=24.0
   - pip:
-    - git+ssh://git@github.com/arcinstitute/wizards-Staff.git@1b780455bce83570f938745fe4eda43240339bc6
+    - git+ssh://git@github.com/arcinstitute/wizards-Staff.git@b44b490ddc799de1dacc3c88ab361eba75cd498d
+
