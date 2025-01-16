@@ -40,9 +40,14 @@ parser.add_argument('--min-object-size', type=int, default=500,
                     help='Minimum size of objects in pixels for successful segmentation')
 parser.add_argument('--max-segment-retries', type=int, default=3,
                     help='Maximum number of retries for segmentation if objects are below the threshold')
+parser.add_argument('--start-diameter', type=int, default=300,
+                    help='Starting diameter for segmentation')
+parser.add_argument('--diameter-step', type=int, default=200,
+                    help='Step to increase the diameter after each failed attempt')
+
 
 # functions
-def segment_image(im_min: np.ndarray, model: models.Cellpose, max_diameter: int) -> tuple:
+def segment_image(im_min: np.ndarray, model: models.Cellpose, max_diameter: int, start_diameter: int = 300, diameter_step: int = 200) -> tuple:
     """
     Segments the image using the provided model and adjusts the diameter if necessary.
     Switches to an alternate model if initial segmentation fails.
@@ -50,19 +55,24 @@ def segment_image(im_min: np.ndarray, model: models.Cellpose, max_diameter: int)
         im_min: The minimum projection of the image series.
         model: The initial Cellpose model to use for segmentation.
         max_diameter: The maximum allowable diameter for segmentation.
+        start_diameter: The starting diameter for segmentation. Default is 300.
+        diameter_step: The step to increase the diameter after each failed attempt. Default is 200.
+
     Returns:
         tuple containing:
         - masks (numpy.ndarray): The segmentation masks.
         - success (bool): Whether the segmentation was successful.
     """
-    diameter = 300
+    diameter = start_diameter
     first_exceed = False
     original_model = model
+
     while diameter <= max_diameter or not first_exceed:
         masks, _, _, _ = model.eval(im_min, diameter=diameter)
         if np.sum(masks) > 0:
-            # success?
-            return masks, True
+            logging.info(f"Segmentation succeeded with diameter {diameter}.")
+            return masks, True, diameter
+        
         elif diameter > max_diameter:
             if not first_exceed:
                 diameter = max_diameter
@@ -72,25 +82,28 @@ def segment_image(im_min: np.ndarray, model: models.Cellpose, max_diameter: int)
                 if model == original_model:
                     logging.info("Switching to 'cyto3' model.")
                     model = models.Cellpose(gpu=False, model_type="cyto3")
-                    diameter = 300
+                    diameter = start_diameter
                     first_exceed = False
                 else:
                     msg = f"Segmentation Failure: Diameter {diameter} exceeds image dimensions {max_diameter}."
                     logging.warning(msg)
-                    return None, False
+                    return None, False, diameter
         else:
-            diameter += 200
+            diameter += diameter_step
             logging.info(f"No object detected. Increasing diameter to {diameter} and retrying...")
     # failed to segment
-    return None, False
+    return None, False, diameter
 
-def mask_image(im_min: np.ndarray, min_object_size: int=1000, max_segment_retries: int=3) -> np.ndarray:
+def mask_image(im_min: np.ndarray, min_object_size: int=500, max_segment_retries: int=3, start_diameter: int = 300, diameter_step: int = 200) -> np.ndarray:
     """
     Masks the image using the Cellpose model.
     Args:
         im_min: The minimum projection of the image data.
         min_object_size: The minimum object size to consider for successful segmentation. Default is 1000.
         max_retries: The maximum number of retries to attempt segmentation. Default is 3.
+        start_diameter: The starting diameter for segmentation. Default is 300.
+        diameter_step: The step to increase the diameter after each failed attempt. Default is 200.
+
     Returns:
         masks: The masks to apply to the image data. Returns None if segmentation fails.
     """
@@ -101,9 +114,13 @@ def mask_image(im_min: np.ndarray, min_object_size: int=1000, max_segment_retrie
 
     # Set the maximum diameter for segmentation
     max_diameter = im_min.shape[0]
+
+    if start_diameter > max_diameter:
+        logging.error("Start_diameter cannot exceed max_diameter. Setting start_diameter to max_diameter.")
+        start_diameter = max_diameter
             
     # Perform segmentation
-    masks, success = segment_image(im_min, model, max_diameter)
+    masks, success, final_diameter = segment_image(im_min, model, max_diameter, start_diameter)
 
     # Check if segmentation was successful        
     if not success:
@@ -116,21 +133,33 @@ def mask_image(im_min: np.ndarray, min_object_size: int=1000, max_segment_retrie
 
     # Check if all objects are larger than the threshold
     retry_count = 0
-    while all(size < min_object_size for size in object_sizes) and retry_count < max_segment_retries:
-        logging.warning(f"All objects are smaller than the threshold ({min_object_size}). Retrying segmentation attempt #{retry_count + 1}...")
-        
-        # Perform segmentation
-        masks, success = segment_image(im_min, model, max_diameter)
+    while retry_count < max_segment_retries:
+        valid_sizes = [size for size in object_sizes if size is not None]
 
-        # Check if segmentation was successful by detecting object sizes
-        object_sizes = detect_object_sizes(masks)
-        logging.info(f"Object sizes detected: {object_sizes} for retry #{retry_count + 1}")
+        if all(size < min_object_size for size in valid_sizes):
+            logging.warning(f"All objects are smaller than the threshold ({min_object_size}). Retrying segmentation attempt #{retry_count + 1}...")
+        
+            if final_diameter >= max_diameter:
+                logging.warning(f"Diameter exceeded max dimensions. Resetting to {max_diameter}.")
+                final_diameter = max_diameter
+            else:
+                final_diameter += diameter_step
+                logging.info(f"Increasing diameter to {final_diameter} for retry #{retry_count + 1}...")
+
+            # Perform segmentation
+            masks, success, final_diameter = segment_image(im_min, model, max_diameter, start_diameter=final_diameter)
+            
+            # Check if segmentation was successful by detecting object sizes
+            object_sizes = detect_object_sizes(masks)
+            logging.info(f"Object sizes detected: {object_sizes} for retry #{retry_count + 1}")
+        else:
+            break  # Exit if valid objects are detected
 
         # Increment the retry count
         retry_count += 1
 
     # Log the success message after exiting the loop
-    if any(size >= min_object_size for size in object_sizes):
+    if any(size >= min_object_size for size in valid_sizes):
         logging.info(f"Successfully segmented objects larger than the threshold ({min_object_size}) after {retry_count} attempts.")
     else:
         logging.error(f"Segmentation failed after {retry_count} retries. No objects met the threshold ({min_object_size}). Proceeding without creating mask.")
@@ -248,6 +277,10 @@ def detect_object_sizes(mask: np.ndarray) -> list:
     Returns:
         A list of object sizes (number of pixels per object).
     """
+    if mask is None or mask.sum() == 0:
+        logging.warning("Mask is empty. No objects detected.")
+        return []
+
     labeled_mask, num_features = label(mask)
     object_sizes = [ndi_sum(mask, labeled_mask, index=i + 1) for i in range(num_features)]
     return object_sizes
@@ -289,7 +322,7 @@ def main(args):
         exit(0)
 
     # Mask the image
-    masks = mask_image(im_min, args.min_object_size, args.max_segment_retries)
+    masks = mask_image(im_min, args.min_object_size, args.max_segment_retries, args.start_diameter, args.diameter_step)
 
     # If segmentation/masking fails, write unmasked image
     if masks is None:
