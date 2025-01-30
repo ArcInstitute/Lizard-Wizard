@@ -260,6 +260,10 @@ def format_masks(im: np.ndarray, im_min: np.ndarray, masks: np.ndarray,
     masked_im = np.nan_to_num(masked_im, nan=epsilon, posinf=epsilon, neginf=epsilon)
     masked_im[masked_im == 0] = epsilon
 
+    # Validate and preprocess the masked data
+    logging.info("Validating masked image data...")
+    masked_im = validate_input_data(masked_im, f"{base_fname}_masked")
+
     # Plot the original and masked images side by side
     outfile = os.path.splitext(img_file)[0] + "_masked-plot.tif"
     plot_mask(im_min, masked_im[0], masks, file_type=file_type, save_path=outfile)
@@ -284,6 +288,72 @@ def detect_object_sizes(mask: np.ndarray) -> list:
     labeled_mask, num_features = label(mask)
     object_sizes = [ndi_sum(mask, labeled_mask, index=i + 1) for i in range(num_features)]
     return object_sizes
+
+def validate_input_data(Y: np.ndarray, fname: str, 
+                        epsilon: float = np.finfo(float).eps) -> np.ndarray:
+    """
+    Validates and preprocesses input data for further processing.
+    
+    Args:
+        Y: Input data array
+        fname: Filename for logging purposes
+        epsilon: Small value to replace zeros/invalid values. If None, calculated from data
+    
+    Returns:
+        Preprocessed numpy array with validated data
+        
+    Raises:
+        ValueError: If validation completely fails
+    """
+    # Check for empty or invalid data
+    if Y is None or Y.size == 0:
+        logging.error(f"Empty or invalid data in {fname}")
+
+    # Calculate epsilon if not provided
+    if epsilon is None:
+        epsilon = np.finfo(Y.dtype).eps * 10
+
+    valid_mask = ~np.isnan(Y) & ~np.isinf(Y)
+    n_invalid = Y.size - np.sum(valid_mask)
+
+    # Log basic statistics about input data
+    logging.info("Input data statistics for debugging:")
+    logging.info(f"Shape: {Y.shape} ({Y.shape[0]} time points)")
+    logging.info(f"dtype: {Y.dtype}")
+    logging.info(f"Min: {np.min(Y)}")
+    logging.info(f"Max: {np.max(Y)}")
+    logging.info(f"Mean: {np.mean(Y)}")
+    logging.info(f"Median: {np.median(Y)}")
+    logging.info(f"Contains NaN: {np.any(np.isnan(Y))}")
+    logging.info(f"Contains inf: {np.any(np.isinf(Y))}")
+    logging.info(f"Contains zeros: {np.any(Y == 0)}")
+    
+    # Save original data statistics
+    orig_min = np.min(Y[valid_mask])
+    orig_max = np.max(Y[valid_mask])
+    
+    # Handle invalid values
+    if np.any(np.isnan(Y)) or np.any(np.isinf(Y)):
+        logging.warning(f"Found NaN/inf values in {fname}, replacing with valid values")
+        Y = np.nan_to_num(Y, nan=epsilon, posinf=orig_max, neginf=orig_min)
+    
+    # Handle zeros or very small values that could cause division issues
+    if np.any(Y < epsilon):
+        logging.warning(f"Found values smaller than {epsilon} in {fname}, replacing with epsilon")
+        Y[Y < epsilon] = epsilon
+    
+    # Verify the fixes worked
+    if np.any(np.isnan(Y)) or np.any(np.isinf(Y)):
+        logging.error(f"Failed to fix NaN/inf values in {fname}")
+    
+    # Log final statistics
+    logging.info("Final data statistics after preprocessing:")
+    logging.info(f"Min: {np.min(Y)}")
+    logging.info(f"Max: {np.max(Y)}")
+    logging.info(f"Mean: {np.mean(Y)}")
+    
+    return Y
+
 
 def main(args):
     logging.info("Starting mask.py...")
