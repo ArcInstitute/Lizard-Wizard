@@ -232,7 +232,6 @@ def run_caiman(im, frate: float, decay_time: float, gSig: int, rf: int,
     gnb = -1                     # number of background components (rank) if positive,
     nb_patch = 0                 # number of background components (rank) per patch if gnb>0,
     ssub_B = 1                   # additional downsampling factor in space for background
-    epsilon = 1e-8               # small epsilon to avoid division by zero in PNR calculation 
 
     # Initialize the CNMF model with the specified parameters
     cnm = cnmf.CNMF(
@@ -376,6 +375,10 @@ def main(args):
     # Load the memory-mapped file
     Yr, dims, T = cm.load_memmap(fname_new)
     Y = Yr.T.reshape((T,) + dims, order="F")
+    if np.any(np.isnan(Y)):
+        logging.error("NaN values found in the memory mapped data!")
+    else:
+        logging.info("Memory mapped data appears clean.")
 
     # Set output
     os.makedirs(args.output_dir, exist_ok=True)
