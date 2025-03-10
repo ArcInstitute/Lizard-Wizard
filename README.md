@@ -123,6 +123,7 @@ nextflow run main.nf \
 We recommend a two-step approach:
 
 1. **Spot Check**: Run the pipeline on a few images first to verify parameters. This will run Lizard Wizard utilizing preset parameters, we recommend reading through the [Parameter Tutorial](./parameter_tutorial.md) for detailed information on how to adjust parameters to your dataset during this step.
+
    ```bash
    nextflow run main.nf \
      -profile conda,slurm \
@@ -134,6 +135,7 @@ We recommend a two-step approach:
    ```
 
 2. **Full Run**: Process the entire dataset using the same output directory
+
    ```bash
    nextflow run main.nf \
      -profile conda,slurm \
@@ -149,6 +151,7 @@ We recommend a two-step approach:
 The pipeline has many configurable parameters that can be set via command line or config files. See either `nextflow.config` or the [Parameter Tutorial](./parameter_tutorial.md) for detailed information about setting these parameters for your specific data type.
 
 Key parameters include:
+
 - `--input_dir`: Path to input images
 - `--output_dir`: Where to save results
 - `--file_type`: Set to "moldev" or "zeiss" depending on your microscope
@@ -158,7 +161,8 @@ Key parameters include:
 
 ## Tutorials
 
-For detailed guidance on how to use Lizard Wizard with your data, see:
+For detailed guidance on how to use Lizard Wizard and the accompanying Wizards Staff with your data, see:
+
 - [Parameter Tutorial](./parameter_tutorial.md) - How to configure parameters for different data types
 - [Output Files Guide](./docs/output_files.md) - Understanding the pipeline output
 - [Troubleshooting Guide](./docs/troubleshooting.md) - Common issues and solutions
@@ -185,6 +189,7 @@ nextflow secrets set OPENAI_API_KEY $OPENAI_API_KEY
 ## Output Files
 
 The pipeline produces a structured output directory containing:
+
 - Processed images
 - Neuronal activity data
 - Metrics tables

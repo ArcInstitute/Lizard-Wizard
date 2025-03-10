@@ -45,6 +45,7 @@ nextflow run main.nf \
   --OTHER_PARAMETERS 
   -N YOUR_EMAIL_HERE@arcinstitute.org
 ```
+
 ## Parameter Categories
 
 Lizard Wizard parameters fall into several categories:
