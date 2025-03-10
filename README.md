@@ -163,9 +163,9 @@ Key parameters include:
 
 For detailed guidance on how to use Lizard Wizard and the accompanying Wizards Staff with your data, see:
 
-- [Parameter Tutorial](./parameter_tutorial.md) - How to configure parameters for different data types
-- [Output Files Guide](./docs/output_files.md) - Understanding the pipeline output
-- [Troubleshooting Guide](./docs/troubleshooting.md) - Common issues and solutions
+- [Lizard Wizard Tutorial](docs/lizardwizard_tutorial.md) - How to configure parameters for Lizard Wizard and account for different data types
+- [Output Files Guide](docs/output_files.md) - Understanding the outputs of the Lizard Wizard pipeline
+- [Troubleshooting Guide](docs/troubleshooting.md) - Common issues and solutions
   
 ## Secrets
 
