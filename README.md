@@ -122,7 +122,7 @@ nextflow run main.nf \
 
 We recommend a two-step approach:
 
-1. **Spot Check**: Run the pipeline on a few images first to verify parameters. This will run Lizard Wizard utilizing preset parameters, we recommend reading through the [Parameter Tutorial](./parameter_tutorial.md) for detailed information on how to adjust parameters to your dataset during this step.
+1. **Spot Check**: Run the pipeline on a few images first to verify parameters. This will run Lizard Wizard utilizing preset parameters, we recommend reading through the general [Tutorial](docs/lizardwizard_tutorial.md) for detailed information on how to adjust parameters to your dataset during this step.
 
    ```bash
    nextflow run main.nf \
@@ -148,7 +148,7 @@ We recommend a two-step approach:
 
 ## Parameters 
 
-The pipeline has many configurable parameters that can be set via command line or config files. See either `nextflow.config` or the [Parameter Tutorial](./parameter_tutorial.md) for detailed information about setting these parameters for your specific data type.
+The pipeline has many configurable parameters that can be set via command line or config files. See either `nextflow.config` or the general [Tutorial](docs/lizardwizard_tutorial.md) for detailed information about setting these parameters for your specific data type.
 
 Key parameters include:
 
