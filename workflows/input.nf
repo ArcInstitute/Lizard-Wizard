@@ -49,6 +49,7 @@ workflow INPUT_WF {
 }
 
 process MOLDEV_CONCAT {
+    publishDir file(params.output_dir) / "concatenated", mode: "copy", overwrite: true
     label "cellpose_env"
     label "process_medium_mem"
 

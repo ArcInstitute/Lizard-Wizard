@@ -18,7 +18,7 @@ workflow MASK_WF {
 
 // Select/format the output files
 def saveAsMask(filename) {
-    if (filename.endsWith('_masks.tif') || filename.endsWith('_full_minprojection.tif') || filename.endsWith('.log')){
+    if (filename.endsWith('_masks.tif') || filename.endsWith('_full_minprojection.tif') || filename.endsWith('_masked.tif') || filename.endsWith('.log')){
         return filename
     } 
     return null
