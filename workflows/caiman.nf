@@ -90,6 +90,7 @@ process CAIMAN {
     publishDir file(params.output_dir) / "caiman", mode: "copy", overwrite: true, saveAs: { filename -> saveAsCaiman(filename) }
     label "caiman_env"
     label "process_highest"
+    maxRetries = 2
     errorStrategy { task.attempt <= maxRetries ? 'retry' : 'ignore' }
 
     input:
