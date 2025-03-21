@@ -69,6 +69,7 @@ process WIZARDS_STAFF {
     source ${frate}
     wizards-staff \\
       --threads ${task.cpus} \\
+      --allow-missing \\
       --frate \$FRATE \\
       --p-th ${params.p_th} \\
       --min-clusters ${params.min_clusters} \\
