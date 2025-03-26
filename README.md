@@ -71,26 +71,6 @@ mamba activate nextflow_env
 
 ## Pipeline install
 
-### Add ssh key to GitHub
-
-> This is only needed if you have not already added your ssh key to GitHub.
-
-```bash
-ssh-keygen -t ed25519 -C "your_email@example.com"
-```
-
-* change `your_email@example.com` to your Arc email
-
-```bash
-cat ~/.ssh/id_ed25519.pub
-```
-
-* copy the output
-* GoTo: `GitHub => Settings > SSH and GPG keys > New SSH key`
-* Paste the output into the key field
-* Add a title (e.g., `Chimera`)
-* Click `Add SSH key`
-
 ### Clone the Repository
 
 ```bash
@@ -100,7 +80,8 @@ git clone git@github.com:ArcInstitute/Lizard-Wizard.git \
 
 ### Pipeline conda environments 
 
-The first time you run the pipeline, Nextflow will automatically create all necessary conda environments. This process may take some time but only happens once.
+The first time you run the pipeline, Nextflow will automatically create all necessary conda environments.
+This process may take some time but only happens once.
 
 **Note:** it can take a while to create the environments, even with `mamba`.
 
@@ -134,6 +115,8 @@ We recommend a two-step approach:
      -N your.email@example.com
    ```
 
+   > Update `-work-dir` as needed for your file system
+
 2. **Full Run**: Process the entire dataset using the same output directory
 
    ```bash
@@ -145,6 +128,8 @@ We recommend a two-step approach:
      -N your.email@example.com \
      -resume
    ```
+
+   > Update `-work-dir` as needed for your file system
 
 ## Parameters 
 
@@ -179,12 +164,6 @@ nextflow secrets set OPENAI_API_KEY $OPENAI_API_KEY
 
 **Notes:**
 * If you do not set `OPENAI_API_KEY`, then the log summaries will be blank.
-* Ask Nick for the `OPENAI_API_KEY` value.
-
-# Resources
-
-* [calcium_image_analysis codebase](https://github.com/ArcInstitute/calcium_image_analysis)
-* [workflow diagram on Miro](https://miro.com/welcomeonboard/SVJGR3Z3QzVqYUFrdWN4RWxqTG9kYXd5d0UwcDZBdXlOMzVlO[…]1RU4wanwzNDU4NzY0NTkzMTk5MTQwMzg4fDI=?share_link_id=667093308277)
 
 ## Output Files
 
@@ -207,4 +186,4 @@ This project is licensed under the [MIT License](./LICENSE) - see the LICENSE fi
 - [CaImAn](https://github.com/flatironinstitute/CaImAn) for calcium imaging analysis
 - [Cellpose](https://github.com/MouseLand/cellpose) for cell segmentation
 - [Nextflow](https://www.nextflow.io/) for workflow management
-- The Arc Institute for supporting this research
+- [Arc Institute](https://www.arcinstitute.org/) for supporting this research
