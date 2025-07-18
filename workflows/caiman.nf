@@ -24,7 +24,7 @@ workflow CAIMAN_WF {
 
 // Helper function to format the output file name
 def saveAsBase(filename){
-    return filename.split("/").last()
+    return filename.split("/")[-1]
 }
 
 // Calculate dF/F0

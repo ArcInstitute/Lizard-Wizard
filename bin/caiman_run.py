@@ -377,6 +377,10 @@ def main(args):
     Y = Yr.T.reshape((T,) + dims, order="F")
     if np.any(np.isnan(Y)):
         logging.error("NaN values found in the memory mapped data!")
+        logging.error(f"Exiting early to prevent later failure in file {args.img_file}")
+        # Create empty output directory to prevent pipeline failure
+        os.makedirs(args.output_dir, exist_ok=True)
+        return
     else:
         logging.info("Memory mapped data appears clean.")
 
