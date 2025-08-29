@@ -1,0 +1,22 @@
+Bootstrap: docker
+From: mambaorg/micromamba:latest
+
+%files
+    envs/wizards_staff.yml /opt/wizards_staff.yml
+
+%post
+    set -eux
+    export MAMBA_ROOT_PREFIX=/opt/conda
+
+    apt-get update && apt-get install -y --no-install-recommends git build-essential && rm -rf /var/lib/apt/lists/*
+    
+    micromamba create -y -n wizards_staff -f /opt/wizards_staff.yml
+    micromamba clean --all --yes
+
+%environment
+    export MAMBA_ROOT_PREFIX="/opt/conda"
+    export CONDA_PREFIX="/opt/conda/envs/wizards_staff"
+    export PATH="/opt/conda/envs/wizards_staff/bin:$PATH"
+
+%runscript
+    exec "$@"

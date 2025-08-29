@@ -1,0 +1,24 @@
+Bootstrap: docker
+From: mambaorg/micromamba:latest
+
+%files
+    envs/caiman.yml /opt/caiman.yml
+
+%post
+    set -eux
+    export MAMBA_ROOT_PREFIX=/opt/conda
+    
+    apt-get update && apt-get install -y --no-install-recommends libgl1 && rm -rf /var/lib/apt/lists/*
+    
+    micromamba create -y -n caiman -f /opt/caiman.yml
+    micromamba clean --all --yes
+
+%environment
+    export MAMBA_ROOT_PREFIX="/opt/conda"
+    export CONDA_PREFIX="/opt/conda/envs/caiman"
+    export PATH="/opt/conda/envs/caiman/bin:$PATH"
+
+%runscript
+    exec "$@"
+
+

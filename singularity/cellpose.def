@@ -1,0 +1,21 @@
+Bootstrap: docker
+From: mambaorg/micromamba:latest
+
+%files
+    envs/cellpose.yml /opt/cellpose.yml
+
+%post
+    set -eux
+    export MAMBA_ROOT_PREFIX=/opt/conda
+    micromamba create -y -n cellpose -f /opt/cellpose.yml
+    micromamba clean --all --yes
+
+%environment
+    export MAMBA_ROOT_PREFIX="/opt/conda"
+    export CONDA_PREFIX="/opt/conda/envs/cellpose"
+    export PATH="/opt/conda/envs/cellpose/bin:$PATH"
+
+%runscript
+    exec "$@"
+
+

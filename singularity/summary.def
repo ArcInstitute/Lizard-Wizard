@@ -1,0 +1,21 @@
+Bootstrap: docker
+From: mambaorg/micromamba:latest
+
+%files
+    envs/summary.yml /opt/summary.yml
+
+%post
+    set -eux
+    export MAMBA_ROOT_PREFIX=/opt/conda
+    micromamba create -y -n summary -f /opt/summary.yml
+    micromamba clean --all --yes
+
+%environment
+    export MAMBA_ROOT_PREFIX="/opt/conda"
+    export CONDA_PREFIX="/opt/conda/envs/summary"
+    export PATH="/opt/conda/envs/summary/bin:$PATH"
+
+%runscript
+    exec "$@"
+
+

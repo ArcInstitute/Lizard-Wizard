@@ -23,6 +23,7 @@ dependencies:
   - scikit-learn=1.5.0
   - zarr=2.18.2
   - pynwb=2.8.0
+  - hdmf=3.14.6
   - ipyparallel=8.8.0
   - tensorflow=2.15.0
   - peakutils=1.3.5

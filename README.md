@@ -16,16 +16,15 @@ The Lizard Wizard pipeline helps researchers analyze subcellular Ca²⁺ signals
   - [Conda \& mamba install](#conda--mamba-install)
   - [Nextflow install](#nextflow-install)
   - [Pipeline install](#pipeline-install)
-    - [Add ssh key to GitHub](#add-ssh-key-to-github)
     - [Clone the Repository](#clone-the-repository)
     - [Pipeline conda environments](#pipeline-conda-environments)
+    - [Singularity](#singularity)
 - [Usage](#usage)
   - [Quick Start](#quick-start)
   - [Example Run](#example-run)
   - [Parameters](#parameters)
   - [Tutorials](#tutorials)
   - [Secrets](#secrets)
-- [Resources](#resources)
   - [Output Files](#output-files)
   - [License](#license)
   - [Acknowledgments](#acknowledgments)
@@ -84,6 +83,28 @@ The first time you run the pipeline, Nextflow will automatically create all nece
 This process may take some time but only happens once.
 
 **Note:** it can take a while to create the environments, even with `mamba`.
+
+### Singularity
+
+For reproducible runs on Arc Internal Cluster, use Singularity containers built from the `singularity/*.def` files.
+
+Build all containers and validate:
+
+```bash
+./build_singularity_containers.sh
+./validate_singularity_setup.sh
+```
+
+Run the pipeline with Singularity profiles:
+
+```bash
+nextflow run main.nf \
+  -profile singularity,chimera,slurm \
+  -work-dir /scratch/$(id -gn)/$(whoami)/nextflow-work/lizard-wizard \
+  --input_dir /path/to/your/images/ \
+  --output_dir /path/to/output/location/ \
+  --test_image_count 2
+```
 
 
 # Usage
