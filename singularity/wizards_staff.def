@@ -8,7 +8,9 @@ From: mambaorg/micromamba:latest
     set -eux
     export MAMBA_ROOT_PREFIX=/opt/conda
 
-    apt-get update && apt-get install -y --no-install-recommends git build-essential && rm -rf /var/lib/apt/lists/*
+    apt-get update && apt-get install -y --no-install-recommends \
+        ibglib2.0-0 libsm6 libxext6 libxrender1 libgl1 git build-essential && \
+        rm -rf /var/lib/apt/lists/*
     
     micromamba create -y -n wizards_staff -f /opt/wizards_staff.yml
     micromamba clean --all --yes
