@@ -1,13 +1,16 @@
 
 # Lizard Wizard Parameter Tutorial
 
-This tutorial explains how to configure Lizard Wizard for optimal calcium signal detection and analysis. Understanding these parameters is essential for getting reliable results from your specific dataset. Below, you'll find an explanation of each parameter and how to define them for your experiments.
+This tutorial explains how to configure Lizard Wizard for optimal calcium signal detection and analysis. It includes a pre-run checklist, data preparation, a parameter selection decision flowchart, recommended starting values by data type, step-by-step workflows, timing guidance, and QC/validation tips.
 
 ## Table of Contents
 
 - [Lizard Wizard Parameter Tutorial](#lizard-wizard-parameter-tutorial)
   - [Table of Contents](#table-of-contents)
   - [Parameters Overview](#parameters-overview)
+  - [Before You Begin](#before-you-begin)
+  - [Data Preparation Guidelines](#data-preparation-guidelines)
+  - [Parameter Selection Flowchart](#parameter-selection-flowchart)
   - [Parameter Categories](#parameter-categories)
   - [Key Parameters Overview](#key-parameters-overview)
   - [Workflow Parameters](#workflow-parameters)
@@ -16,9 +19,17 @@ This tutorial explains how to configure Lizard Wizard for optimal calcium signal
   - [Clustering Parameters](#clustering-parameters)
   - [Experimental Parameters](#experimental-parameters)
   - [Parameter Examples by Data Type NOTE THIS IS JUST PLACEHOLDER NUMBERS WE NEED TO UPDATE](#parameter-examples-by-data-type-note-this-is-just-placeholder-numbers-we-need-to-update)
-    - [For 3D Organoid/Spheroid Imaging (Molecular Devices)](#for-3d-organoidspheroid-imaging-molecular-devices)
-    - [For 2D Neuronal Culture (Molecular Devices)](#for-2d-neuronal-culture-molecular-devices)
-    - [For High-Magnification Zeiss Data](#for-high-magnification-zeiss-data)
+    - [3D Organoid/Spheroid Imaging (Molecular Devices)](#3d-organoidspheroid-imaging-molecular-devices)
+    - [2D Neuronal Culture (Molecular Devices)](#2d-neuronal-culture-molecular-devices)
+    - [High-Magnification Zeiss Data](#high-magnification-zeiss-data)
+  - [Step-by-Step Walkthrough](#step-by-step-walkthrough)
+  - [Common Workflows](#common-workflows)
+    - [2D culture analysis](#2d-culture-analysis)
+    - [3D organoid analysis](#3d-organoid-analysis)
+    - [Time-series analysis](#time-series-analysis)
+    - [Multi-condition comparisons](#multi-condition-comparisons)
+  - [Expected Processing Times](#expected-processing-times)
+  - [Validation and Quality Control](#validation-and-quality-control)
   - [Simulation Data Parameters](#simulation-data-parameters)
   - [Troubleshooting Parameter Settings](#troubleshooting-parameter-settings)
     - [No Cells Detected](#no-cells-detected)
@@ -46,6 +57,45 @@ nextflow run main.nf \
   -N YOUR_EMAIL_HERE@arcinstitute.org
 ```
 
+## Before You Begin
+
+- Verify Nextflow and Java:
+  - `nextflow -version` 
+- Activate the environment: `conda activate nextflow_env`
+- Ensure input images are accessible on the compute system (e.g., copied to `/scratch`/cluster storage).
+- Confirm write access to `--output_dir` and enough space for intermediate files.
+
+## Data Preparation Guidelines
+
+- Set `--file_type` to match your imaging system: `moldev` or `zeiss`.
+- Organize inputs so each acquisition or condition is in a clear directory.
+- Avoid extremely long file names and special characters.
+- For 3D organoids, keep voxel size metadata consistent across files.
+- If motion is severe, consider preprocessing or higher frame rates.
+
+## Parameter Selection Flowchart
+
+```mermaid
+flowchart TD
+  A[Start: Know imaging modality?] -->|2D| B[Set --use_2d true]
+  A -->|3D| C[Set --use_2d false]
+  B --> D{Neuron size in pixels?}
+  C --> D
+  D -->|Small (3-5)| E[gSig 4-5]
+  D -->|Medium (5-7)| F[gSig 5-7]
+  D -->|Large (7-9)| G[gSig 7-8]
+  E --> H[min_corr 0.75-0.85]
+  F --> H
+  G --> H
+  H --> I[min_pnr 4-6; min_SNR 2.5-3.5]
+  I --> J{Spot check 2-3 images}
+  J -->|Too many FPs| K[increase min_corr/min_pnr/min_SNR]
+  J -->|Missed events| L[decrease thresholds or zscore_threshold]
+  K --> M[Re-run spot check]
+  L --> M
+  M --> N[Proceed to full run]
+```
+
 ## Parameter Categories
 
 Lizard Wizard parameters fall into several categories:
@@ -63,12 +113,12 @@ Here's a quick reference of the most commonly adjusted parameters by data type:
 | Parameter | 2D Recordings | 3D Organoids | Large Field of View | Small Field of View |
 |-----------|---------------|--------------|---------------------|---------------------|
 | `--use_2d` | `true` | `false` | Any | Any |
-| `gSig` | 4-6 | 6-8 | 6-10 | 3-6 |
-| `decay_time` | 0.3-0.5 | 0.5-0.7 | Any | Any |
-| `min_SNR` | 2-3 | 3-4 | 2-3 | 3-4 |
-| `min_corr` | 0.7-0.8 | 0.8-0.9 | 0.7-0.8 | 0.8-0.9 |
-| `min_pnr` | 4-5 | 5-8 | 4-6 | 6-8 |
-| `size_threshold` | 10000-15000 | 20000-30000 | 20000-30000 | 10000-15000 |
+| `gSig` | 4–6 | 6–8 | 6–9 | 4–6 |
+| `decay_time` (s) | 0.35–0.5 | 0.5–0.7 | Any | Any |
+| `min_SNR` | 2.5–3.5 | 3–4 | 2.5–3.5 | 3–4 |
+| `min_corr` | 0.75–0.85 | 0.82–0.9 | 0.75–0.85 | 0.82–0.9 |
+| `min_pnr` | 4–6 | 5–7 | 4–6 | 6–8 |
+| `size_threshold` | 10000–15000 | 20000–30000 | 20000–30000 | 10000–15000 |
 
 ## Workflow Parameters
 
@@ -248,7 +298,9 @@ These parameters relate to cell segmentation and image masking:
 
 ## Parameter Examples by Data Type NOTE THIS IS JUST PLACEHOLDER NUMBERS WE NEED TO UPDATE
 
-### For 3D Organoid/Spheroid Imaging (Molecular Devices)
+These are recommended starting points that have worked well on representative datasets. Always spot check and fine-tune for your imaging conditions.
+
+### 3D Organoid/Spheroid Imaging (Molecular Devices)
 
 ```bash
 nextflow run main.nf \
@@ -266,7 +318,7 @@ nextflow run main.nf \
   --test_image_count 2
 ```
 
-### For 2D Neuronal Culture (Molecular Devices)
+### 2D Neuronal Culture (Molecular Devices)
 
 ```bash
 nextflow run main.nf \
@@ -284,7 +336,7 @@ nextflow run main.nf \
   --test_image_count 2
 ```
 
-### For High-Magnification Zeiss Data
+### High-Magnification Zeiss Data
 
 ```bash
 nextflow run main.nf \
@@ -300,6 +352,77 @@ nextflow run main.nf \
   --size_threshold 15000 \
   --test_image_count 2
 ```
+
+## Step-by-Step Walkthrough
+
+1. Spot check 2–3 images with conservative thresholds:
+
+   ```bash
+   nextflow run main.nf \
+     -profile conda,slurm \
+     -work-dir /scratch/$(id -gn)/$(whoami)/nextflow-work/lizard-wizard \
+     --input_dir /data/exp1/cultures/ \
+     --output_dir /data/exp1/outputs/run1/ \
+     --file_type moldev \
+     --test_image_count 3 \
+     --gSig 5 --min_corr 0.8 --min_pnr 5 --min_SNR 3 \
+     -N your.email@example.com
+   ```
+
+2. Inspect QC images and traces in `caiman/`, `caiman_calc-dff-f0/`, and `wizards-staff/` under the output directory.
+
+3. Adjust parameters using the [flowchart](#parameter-selection-flowchart) guidance.
+
+4. Run the full dataset with `-resume`:
+
+   ```bash
+   nextflow run main.nf \
+     -profile conda,slurm \
+     -work-dir /scratch/$(id -gn)/$(whoami)/nextflow-work/lizard-wizard \
+     --input_dir /data/exp1/cultures/ \
+     --output_dir /data/exp1/outputs/run1/ \
+     -resume
+   ```
+
+## Common Workflows
+
+### 2D culture analysis
+
+- Use `--use_2d true`, `gSig 4–6`, `decay_time 0.35–0.5`.
+- Optimize `min_corr` and `min_pnr` to balance sensitivity vs specificity.
+- Downsample (`tsub=2`, `ssub=2`) if processing time is high.
+
+### 3D organoid analysis
+
+- Use `--use_2d false`, `gSig 6–8`, `decay_time 0.5–0.7`.
+- Increase `size_threshold` to remove small artifacts.
+- Expect longer processing and higher memory use.
+
+### Time-series analysis
+
+- For long movies, increase `win_sz` for stable ΔF/F₀ baselines.
+- Verify stability in `*_df-f0-graph.png` and denoised traces.
+
+### Multi-condition comparisons
+
+- Keep parameters identical across conditions.
+- Export Wizards Staff CSVs (`frpm-data.csv`, `fwhm-data.csv`, `rise-time-data.csv`, correlations) for statistical analysis.
+
+## Expected Processing Times
+
+- Small 2D (100–200 frames, 512×512): 5–15 minutes per sample
+- Large 2D (500–1000 frames, 1024×1024): 15–45 minutes per sample
+- 3D organoids (500–1000 frames, large FOV): 30–90+ minutes per sample
+
+Actual times depend on hardware, `-cpus`, and storage performance.
+
+## Validation and Quality Control
+
+- Review `*_cnm-A.npy` footprints with montages for anatomical plausibility.
+- Confirm clear calcium transients in `*_cnm-traces.png` and `*_cnm-denoised-traces.png`.
+- Check ΔF/F₀ traces in `*_df-f0-graph.png` for baseline stability.
+- Use Wizards Staff plots to verify clustering structure and spatial activity overlays.
+- If QC fails, revisit `gSig`, `min_corr`, `min_pnr`, and downsampling.
 
 ## Simulation Data Parameters
 
@@ -348,7 +471,6 @@ Simulation-specific parameters:
 
 - **`--exposure_time [integer]`**: Simulated exposure time in seconds
   - Default: `8`
-
 
 ## Troubleshooting Parameter Settings
 
