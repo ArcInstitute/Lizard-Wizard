@@ -174,7 +174,7 @@ def plot_stacked_traces(dff_dat: np.ndarray, time_points: np.ndarray,
     plt.ylabel('ΔF/F₀')
     plt.title(title)
     plt.yticks([])
-    plt.show()
+    # plt.show()
 
 def draw_dff_activity(act_dat: np.ndarray, act_filt_nsp_ids: np.array, max_dff_int: float, 
                       begin_tp: int, end_tp: int, sz_per_neuron, output_dir: str, 
@@ -249,7 +249,7 @@ def draw_dff_activity(act_dat: np.ndarray, act_filt_nsp_ids: np.array, max_dff_i
     ax.margins(0.008)
     
     # Display the plot
-    plt.show()
+    # plt.show()
 
     # Save plot
     fig.savefig(os.path.join(output_dir, f'{base_fname}_df-f0-graph.png'), format='png')

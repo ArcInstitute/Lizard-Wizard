@@ -9,7 +9,6 @@ from typing import Tuple
 ## 3rd party
 import numpy as np
 import tifffile
-import matplotlib.pyplot as plt
 from tqdm import tqdm
 ## local
 from load_czi import load_image_data_czi

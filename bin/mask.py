@@ -227,7 +227,7 @@ def plot_mask(original_image: np.ndarray, masked_image: np.ndarray, mask: np.nda
     plt.tight_layout()
     if save_path:
         fig.savefig(save_path, format='tiff')
-    plt.show()
+    # plt.show()
 
     # Status
     logging.getLogger().setLevel(logging.INFO)
