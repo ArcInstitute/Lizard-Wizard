@@ -1,0 +1,83 @@
+name: Sync Issue Comment to Asana
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  sync-comment-to-asana:
+    # Only run for issue comments, not PR comments
+    if: ${{ !github.event.issue.pull_request }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install asana
+        run: pip install asana
+      
+      - name: Add Comment to Asana Task
+        env:
+          ASANA_TOKEN: ${{ secrets.ASANA_TOKEN }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          COMMENT_AUTHOR: ${{ github.event.comment.user.login }}
+          COMMENT_URL: ${{ github.event.comment.html_url }}
+        run: |
+          python - <<EOF
+          import os
+          import asana
+          
+          # Configure the client
+          configuration = asana.Configuration()
+          configuration.access_token = os.environ['ASANA_TOKEN']
+          api_client = asana.ApiClient(configuration)
+          
+          # Create API instances
+          tasks_api = asana.TasksApi(api_client)
+          stories_api = asana.StoriesApi(api_client)
+          
+          issue_url = os.environ['ISSUE_URL']
+          comment_body = os.environ['COMMENT_BODY']
+          comment_author = os.environ['COMMENT_AUTHOR']
+          comment_url = os.environ['COMMENT_URL']
+          
+          # Parent task GID for "Issues" task
+          issues_parent_task_gid = '1211152257319662'
+          
+          # Get all subtasks from the "Issues" parent task
+          opts = {
+              'opt_fields': 'gid,name,notes'
+          }
+          
+          try:
+              subtasks = tasks_api.get_subtasks_for_task(issues_parent_task_gid, opts)
+              
+              # Find the subtask that contains this GitHub issue URL
+              matching_task = None
+              for task in subtasks:
+                  if issue_url in task.get('notes', ''):
+                      matching_task = task
+                      break
+              
+              if matching_task:
+                  # Add comment as a story to the Asana task
+                  comment_text = f"Comment from @{comment_author} on GitHub:\n\n{comment_body}\n\n---\nView on GitHub: {comment_url}"
+                  
+                  story_body = {
+                      "data": {
+                          "text": comment_text
+                      }
+                  }
+                  
+                  stories_api.create_story_for_task(story_body, matching_task['gid'], {})
+                  print(f"Comment synced to Asana task '{matching_task['name']}' (GID: {matching_task['gid']})")
+              else:
+                  print(f"No Asana subtask found containing issue URL: {issue_url}")
+                  
+          except Exception as e:
+              print(f"Error: {e}")
+              raise
+          EOF
+

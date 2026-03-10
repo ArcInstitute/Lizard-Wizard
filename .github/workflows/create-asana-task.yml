@@ -1,0 +1,56 @@
+name: Create Asana Task from Issue
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  create-asana-task:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install asana
+        run: pip install asana
+      
+      - name: Create Asana Task
+        env:
+          ASANA_TOKEN: ${{ secrets.ASANA_TOKEN }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+        run: |
+          python - <<EOF
+          import os
+          import asana
+          
+          # Configure the client
+          configuration = asana.Configuration()
+          configuration.access_token = os.environ['ASANA_TOKEN']
+          api_client = asana.ApiClient(configuration)
+          
+          # Create tasks API instance
+          tasks_api_instance = asana.TasksApi(api_client)
+            
+          # Parent task GID for "Issues" task
+          issues_parent_task_gid = '1211152257319662'
+          
+          # Create the subtask under the "Issues" parent task
+          # Assignee GID for jesseh
+          assignee_gid = '1204867663578255'
+          
+          body = {
+              "data": {
+                  "name": os.environ['ISSUE_TITLE'],
+                  "notes": f"{os.environ.get('ISSUE_BODY', '')}\n\nGitHub Issue: {os.environ['ISSUE_URL']}",
+                  **({"assignee": assignee_gid} if assignee_gid else {})
+              }
+          }
+          
+          opts = {}
+          
+          result = tasks_api_instance.create_subtask_for_task(body, issues_parent_task_gid, opts)
+          print(f"Asana subtask created successfully! Task GID: {result['gid']}")
+          EOF

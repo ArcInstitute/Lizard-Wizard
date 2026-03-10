@@ -1,0 +1,74 @@
+name: Complete Asana Task on Issue Close
+on:
+  issues:
+    types: [closed]
+
+jobs:
+  complete-asana-task:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install asana
+        run: pip install asana
+      
+      - name: Complete Asana Task
+        env:
+          ASANA_TOKEN: ${{ secrets.ASANA_TOKEN }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+        run: |
+          python - <<EOF
+          import os
+          import asana
+          
+          # Configure the client
+          configuration = asana.Configuration()
+          configuration.access_token = os.environ['ASANA_TOKEN']
+          api_client = asana.ApiClient(configuration)
+          
+          # Create tasks API instance
+          tasks_api = asana.TasksApi(api_client)
+          
+          issue_url = os.environ['ISSUE_URL']
+          
+          # Parent task GID for "Issues" task
+          issues_parent_task_gid = '1211152257319662'
+          
+          # Get all subtasks from the "Issues" parent task
+          opts = {
+              'opt_fields': 'gid,name,notes,completed'
+          }
+          
+          try:
+              subtasks = tasks_api.get_subtasks_for_task(issues_parent_task_gid, opts)
+              
+              # Find the subtask that contains this GitHub issue URL
+              matching_task = None
+              for task in subtasks:
+                  if issue_url in task.get('notes', ''):
+                      matching_task = task
+                      break
+              
+              if matching_task:
+                  if matching_task.get('completed'):
+                      print(f"Task '{matching_task['name']}' is already completed.")
+                  else:
+                      # Mark the task as complete
+                      update_body = {
+                          "data": {
+                              "completed": True
+                          }
+                      }
+                      tasks_api.update_task(update_body, matching_task['gid'], {})
+                      print(f"Asana task '{matching_task['name']}' marked as complete! Task GID: {matching_task['gid']}")
+              else:
+                  print(f"No Asana subtask found containing issue URL: {issue_url}")
+                  
+          except Exception as e:
+              print(f"Error: {e}")
+              raise
+          EOF
+
