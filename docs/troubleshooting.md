@@ -275,19 +275,21 @@ This guide addresses common issues you might encounter when running the Lizard W
 
 ### Container build fails for Wizards-Staff
 
-**Problem:** `pip` git+ssh install fails during `singularity build`.
+**Problem:** the `pip` install of Wizards-Staff fails during `singularity build` / `./build_singularity_containers.sh`.
 
 **Solutions:**
-- Ensure network egress from build node; `git` and `openssh-client` are installed in the definition (`wizards_staff.def`).
-- Prefer HTTPS with a read token: replace `git+ssh://git@github.com/...` with `git+https://<TOKEN>@github.com/...` in `envs/wizards_staff.yml`, or vendor a released tarball.
+- Ensure the build node has network egress to GitHub. `envs/wizards_staff.yml` installs Wizards-Staff over **HTTPS** (`git+https://github.com/ArcInstitute/Wizards-Staff.git@main`), so no SSH key is required.
+- If your build node has no internet access, build the image on a machine that does and copy the resulting `.sif`, or vendor a released tarball and point the `pip:` entry at it.
+- For a private fork requiring auth, use `git+https://<TOKEN>@github.com/...` with a read-only token.
 
 ### Runtime cannot find mounted data paths
 
-**Problem:** Processes cannot access `/large_storage` or `/scratch`.
+**Problem:** Processes inside the container cannot access your input/output/scratch directories.
 
 **Solutions:**
-- Use `-profile singularity,chimera` which sets `singularity.autoMounts = true`.
-- If needed, add explicit binds: `singularity.runOptions = "-B /large_storage -B /scratch"` in a profile.
+- The `singularity` profile sets `singularity.autoMounts = true`, which auto-binds most paths.
+- If a path is still not visible, add explicit binds for *your* directories in a custom profile, e.g. `singularity.runOptions = "-B /your/data -B /your/scratch"`.
+- **[Arc internal]** On Chimera, `-profile singularity,chimera_singularity` already binds `/large_storage` and `/scratch`. External users should bind their own paths instead.
 
 ### GPU not detected inside container
 

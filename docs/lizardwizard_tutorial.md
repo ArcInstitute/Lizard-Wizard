@@ -48,21 +48,31 @@ Each parameter influences how calcium imaging data is processed and analyzed, en
 
 ```bash
 nextflow run main.nf \
-  -profile conda,slurm \
-  -work-dir /scratch/$(id -gn)/$(whoami)/nextflow-work/lizard-wizard \
+  -profile conda \
   --input_dir /path/to/image/files/ \
   --output_dir /path/to/output/location/ \
+  --file_type moldev \
   --test_image_count 3 \
-  --OTHER_PARAMETERS 
-  -N YOUR_EMAIL_HERE@arcinstitute.org
+  --OTHER_PARAMETERS
 ```
+
+> **Picking a profile / execution environment.** The examples in this tutorial use
+> `-profile conda` (runs locally with conda environments). To run on a cluster or
+> the cloud, add an executor profile — e.g. `-profile conda,slurm_generic` for a
+> generic SLURM cluster, `-profile awsbatch`, or `-profile gcp`. Arc users on the
+> Chimera HPC use `-profile conda,chimera,slurm`. See the
+> [README "Choose Your Environment"](../README.md#choose-your-environment) section
+> for the full matrix and copy-pasteable commands. On a shared cluster, add
+> `-work-dir <your-scratch>/nextflow-work/lizard-wizard` (scratch layout varies by
+> site). Add `-N you@example.com` for email notifications (requires a reachable
+> SMTP relay; optional).
 
 ## Before You Begin
 
 - Verify Nextflow and Java:
   - `nextflow -version` 
 - Activate the environment: `conda activate nextflow_env`
-- Ensure input images are accessible on the compute system (e.g., copied to `/scratch`/cluster storage).
+- Ensure input images are accessible on the machine/cluster where the pipeline runs (on an HPC, this usually means copying them to shared or scratch storage; in the cloud, an S3/GCS bucket).
 - Confirm write access to `--output_dir` and enough space for intermediate files.
 
 ## Data Preparation Guidelines
@@ -123,23 +133,25 @@ Here's a quick reference of the most commonly adjusted parameters by data type:
 ## Workflow Parameters
 
 - **`-profile [profiles]`**:  
-    Specifies the use of conda environments and SLURM as the job scheduler. Modify this depending on your local execution environment.
-  - Example: `-profile conda,slurm,chimera`
+    Selects how environments are provided (conda/Docker/Singularity) and which executor/scheduler is used. Combine one container/conda profile with one executor profile. See the [README "Choose Your Environment"](../README.md#choose-your-environment) matrix for the full list.
+  - Examples: `-profile conda` (local), `-profile conda,slurm_generic` (generic SLURM), `-profile awsbatch`, `-profile gcp`
   - Common options:
-    - `conda`: Use conda environments
-    - `slurm`: Use SLURM scheduler
-    - `vm`: Local execution
-    - `chimera`: Parameters for the Chimera cluster
+    - `conda`: Use conda environments (no containers)
+    - `docker`: Use Docker containers (local)
+    - `singularity`: Use Singularity/Apptainer containers (build them first; see README)
+    - `slurm_generic`: Generic SLURM scheduler (override the queue with `--slurm_queue`)
+    - `awsbatch` / `gcp`: Cloud execution
+    - **[Arc internal]** `slurm`, `chimera`, `chimera_singularity`: Chimera-specific; do not use outside Arc
 
 - **`-work-dir`**:  
-  Defines the working directory where intermediate files will be stored. Adjust this path as needed for your system. The example above places the files in the user's scratch directory.
+  Defines the working directory where intermediate files will be stored. Adjust this path as needed for your system. On an HPC this is typically fast scratch storage (e.g. `<your-scratch>/nextflow-work/lizard-wizard`); scratch layout varies by cluster. Defaults to `./work` if omitted.
 
 - **`input_dir`** (string):  
-  Path to the directory on Chimera containing your input images. This is where the raw calcium imaging data files are located on Chimera. **Note: your images must be transferred from the NAS/local storage to Chimera for Lizard-Wizard to function correctly.**
+  Path to the directory containing your input images. The images must be accessible from wherever the pipeline runs — on an HPC that usually means copying them to shared/scratch storage; in the cloud, an `s3://`/`gs://` bucket path.
   - Example: `"/path/to/input/images/"`
 
 - **`output_dir`** (string):  
-  Path to the directory where the output files will be saved on chimera. This includes .npy files of processed calcium traces, and images. This will be the path specified for analysis by the related Calcium Imaging analysis package Wizards-Staff.  
+  Path to the directory where the output files will be saved. This includes .npy files of processed calcium traces and images. This is the path you'll point the related Wizards-Staff analysis package at.  
   - Example: `"/path/to/output/results/"`
 
 - **`test_image_count`** (integer):  
@@ -154,8 +166,8 @@ Here's a quick reference of the most commonly adjusted parameters by data type:
   --test_image_names 10xGCaMP-6wk-F08_s1_FITC,10xGCaMP-6wk-D10_s1_FITC
   \`\`\`
 
-- **`-N YOUR_EMAIL_HERE@arcinstitute.org`**:  
-  Provides an email address to receive pipeline status updates (e.g., error notifications and completion messages). While optional, it's highly recommended for monitoring long-running jobs. Be sure to replace `YOUR_EMAIL_HERE@arcinstitute.org` with your actual email address.
+- **`-N you@example.com`**:  
+  Provides an email address to receive pipeline status updates (e.g., error notifications and completion messages). Optional, but handy for monitoring long-running jobs. Replace `you@example.com` with your actual email address. Email delivery requires a reachable SMTP relay configured via `LZW_MAIL_FROM` / `LZW_SMTP_HOST` / `LZW_SMTP_PORT` (see `config/utils.config`); if you skip `-N`, the pipeline runs normally.
 
 ## Calcium Detection Parameters
 
@@ -304,7 +316,7 @@ These are recommended starting points that have worked well on representative da
 
 ```bash
 nextflow run main.nf \
-  -profile conda,slurm \
+  -profile conda \
   --input_dir /path/to/organoid/images/ \
   --output_dir /path/to/output/location/ \
   --file_type moldev \
@@ -322,7 +334,7 @@ nextflow run main.nf \
 
 ```bash
 nextflow run main.nf \
-  -profile conda,slurm \
+  -profile conda \
   --input_dir /path/to/2D/cultures/ \
   --output_dir /path/to/output/location/ \
   --file_type moldev \
@@ -340,7 +352,7 @@ nextflow run main.nf \
 
 ```bash
 nextflow run main.nf \
-  -profile conda,slurm \
+  -profile conda \
   --input_dir /path/to/zeiss/images/ \
   --output_dir /path/to/output/location/ \
   --file_type zeiss \
@@ -359,15 +371,16 @@ nextflow run main.nf \
 
    ```bash
    nextflow run main.nf \
-     -profile conda,slurm \
-     -work-dir /scratch/$(id -gn)/$(whoami)/nextflow-work/lizard-wizard \
+     -profile conda \
      --input_dir /data/exp1/cultures/ \
      --output_dir /data/exp1/outputs/run1/ \
      --file_type moldev \
      --test_image_count 3 \
-     --gSig 5 --min_corr 0.8 --min_pnr 5 --min_SNR 3 \
-     -N your.email@example.com
+     --gSig 5 --min_corr 0.8 --min_pnr 5 --min_SNR 3
    ```
+
+   > On a cluster, add an executor profile and a scratch work dir, e.g.
+   > `-profile conda,slurm_generic -work-dir <your-scratch>/nextflow-work/lizard-wizard`.
 
 2. Inspect QC images and traces in `caiman/`, `caiman_calc-dff-f0/`, and `wizards-staff/` under the output directory.
 
@@ -377,8 +390,7 @@ nextflow run main.nf \
 
    ```bash
    nextflow run main.nf \
-     -profile conda,slurm \
-     -work-dir /scratch/$(id -gn)/$(whoami)/nextflow-work/lizard-wizard \
+     -profile conda \
      --input_dir /data/exp1/cultures/ \
      --output_dir /data/exp1/outputs/run1/ \
      -resume
@@ -426,11 +438,12 @@ Actual times depend on hardware, `-cpus`, and storage performance.
 
 ## Simulation Data Parameters
 
-For users getting started with Lizard Wizard, we provide tools to generate simulated calcium imaging data. This helps understand parameter settings before applying them to real data:
+For users getting started with Lizard Wizard, we provide tools to generate simulated calcium imaging data. This helps understand parameter settings before applying them to real data, and needs **no input images** (it uses the bundled `data/synthetic_puffs_movie.tiff`). Set `--simulate true` and choose any container/conda profile:
 
 ```bash
 nextflow run main.nf \
-  -profile dev_moldev_2d_sim,vm,conda \
+  -profile conda \
+  --simulate true \
   --num_simulations 3 \
   --num_frames 500 \
   --puff_intensity 7 \

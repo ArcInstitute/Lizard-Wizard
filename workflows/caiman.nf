@@ -121,8 +121,21 @@ process CAIMAN {
     rm -rf \$CAIMAN_DATA && mkdir -p \${CAIMAN_DATA}/temp
     cp $img_masked \${CAIMAN_DATA}/temp/
 
+    # Stage CaImAn's memory-mapped file on a RAM disk (/dev/shm) so that
+    # worker processes read patches at memory-bus speed instead of over the
+    # network-attached scratch filesystem. Fall back to the task's local tmp
+    # dir if /dev/shm is unavailable or too small for the dataset.
+    CAIMAN_TMP="/dev/shm/caiman_${task.hash}"
+    if ! mkdir -p "\$CAIMAN_TMP" 2>/dev/null; then
+        CAIMAN_TMP="\${TMPDIR:-\$PWD/tmp}/caiman_${task.hash}"
+        mkdir -p "\$CAIMAN_TMP"
+        echo "WARN: /dev/shm unavailable; using \$CAIMAN_TMP for memmap" 1>&2
+    fi
+    trap 'rm -rf "\$CAIMAN_TMP"' EXIT INT TERM
+
     # run the caiman process
     caiman_run.py -p $task.cpus \\
+      --tmpdir "\$CAIMAN_TMP" \\
       --decay_time $params.decay_time \\
       --gSig $params.gSig \\
       --rf $params.rf \\

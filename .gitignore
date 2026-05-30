@@ -12,3 +12,8 @@ screenlog.*
 *.pyc
 bin/get_metadata.py
 *.txt
+
+# Locally built containers and their cache (not published; built per-user)
+*.sif
+.singularity-cache/
+results*/

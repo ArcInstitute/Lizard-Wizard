@@ -65,6 +65,10 @@ parser.add_argument('--motion_correct', action='store_true', default=False,
                     help = 'Perform motion correction')
 parser.add_argument('-p', '--processes', type=int, default=1,
                     help='Number of processes to use')
+parser.add_argument('--tmpdir', type=str, default=None,
+                    help='Directory for the memory-mapped file. Use a RAM disk '
+                         '(e.g. /dev/shm/caiman_<id>) to eliminate disk I/O '
+                         'during CNMF. Defaults to the current working directory.')
 
 
 # functions
@@ -361,16 +365,27 @@ def read_frate(infile: str) -> float:
 
 def main(args):
     logging.info("Starting caiman_run.py...")
-    # Set max threads (processes) due to memory limitations
-    args.processes = 8 if args.processes > 8 else args.processes
+    # Use all CPUs allocated by the scheduler. The CNMF-E patch-parallel section
+    # scales well up to ~16-24 workers; memory headroom is governed by the
+    # `process_highest` label in config/process.config, which already grows with
+    # task.attempt to handle OOM retries.
+    logging.info(f"Running CaImAn with {args.processes} parallel processes")
 
     # Get the frame rate
     frate = read_frate(args.frate_file)
     logging.info(f"Frame rate set to: {frate}")
 
-    # Create a memory-mapped file using CaImAn from the temp file
+    # Create a memory-mapped file using CaImAn from the temp file.
+    # If --tmpdir is provided (typically a RAM disk like /dev/shm), the memmap
+    # is created there so all subsequent reads happen at memory-bus speed and
+    # there is no I/O contention between worker processes.
+    memmap_base = "memmap_"
+    if args.tmpdir:
+        os.makedirs(args.tmpdir, exist_ok=True)
+        memmap_base = os.path.join(args.tmpdir, "memmap_")
+        logging.info(f"Writing memmap under: {args.tmpdir}")
     logging.info("Creating memory-mapped file...")
-    fname_new = cm.save_memmap([args.img_file], base_name="memmap_", order="C")
+    fname_new = cm.save_memmap([args.img_file], base_name=memmap_base, order="C")
   
     # Load the memory-mapped file
     Yr, dims, T = cm.load_memmap(fname_new)
