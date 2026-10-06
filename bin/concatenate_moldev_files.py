@@ -8,6 +8,7 @@ import gc
 import shutil
 import logging
 import argparse
+from datetime import datetime
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
 ## 3rd party
@@ -111,6 +112,77 @@ def filter_tiff_files(file_groups: dict, test_image_nums: str, test_image_count:
         file_groups = {k: v for k, v in file_groups.items() if k in group_ids}
     return file_groups
 
+def chunk_index(file_path: str) -> int:
+    """
+    Get the chunk number of a MolDev TIFF file.
+    MolDev writes the first chunk with no suffix, then "-file002", "-file003", etc.
+    Args:
+        file_path: TIFF file path
+    Returns:
+        Chunk number (1 for the unsuffixed file)
+    """
+    match = re.search(r"-file(\d+)\.tiff?$", os.path.basename(file_path), re.IGNORECASE)
+    return int(match.group(1)) if match else 1
+
+def sort_chunks(files: list) -> list:
+    """
+    Sort MolDev TIFF chunks into acquisition order.
+    A plain string sort is wrong: "-" sorts before ".", so the unsuffixed
+    first chunk would end up last.
+    Args:
+        files: List of TIFF file paths
+    Returns:
+        Sorted list of TIFF file paths
+    """
+    files = sorted(files, key=chunk_index)
+    indices = [chunk_index(f) for f in files]
+    if len(set(indices)) != len(indices):
+        raise ValueError(f"Duplicate chunk numbers in files: {files}")
+    return files
+
+def get_acquisition_time(file_path: str):
+    """
+    Read the first-frame acquisition time from a MolDev TIFF file's MetaMorph XML.
+    Args:
+        file_path: TIFF file path
+    Returns:
+        datetime of the first frame, or None if not available
+    """
+    with tifffile.TiffFile(file_path) as tif:
+        tag = tif.pages[0].tags.get('ImageDescription', None)
+        if tag is None:
+            return None
+        try:
+            root = ET.fromstring(tag.value)
+        except ET.ParseError:
+            return None
+    for prop in root.iter('prop'):
+        if prop.get('id') == 'acquisition-time-local':
+            try:
+                return datetime.strptime(prop.get('value'), "%Y%m%d %H:%M:%S.%f")
+            except (TypeError, ValueError):
+                return None
+    return None
+
+def check_chunk_timestamps(files: list) -> None:
+    """
+    Check that the chunk order matches the first-frame acquisition times.
+    Raises a ValueError if they disagree.
+    Args:
+        files: List of TIFF file paths, in chunk order
+    """
+    if len(files) < 2:
+        return
+    times = [get_acquisition_time(f) for f in files]
+    if any(t is None for t in times):
+        logging.warning("  Could not read acquisition-time-local for all chunks; skipping timestamp order check")
+        return
+    for (f1, t1), (f2, t2) in zip(zip(files, times), zip(files[1:], times[1:])):
+        if t2 <= t1:
+            raise ValueError(
+                f"Chunk order does not match acquisition times: {f1} ({t1}) is followed by {f2} ({t2})"
+            )
+
 def concatenate_images(files: list, output_file: str) -> None:
     """
     Concatenate the image data from related TIFF files and save the combined image
@@ -122,7 +194,9 @@ def concatenate_images(files: list, output_file: str) -> None:
     logging.info(f"Concatenating {len(files)} images to: {output_file}")
 
     # Sort files to ensure they are concatenated in the correct order
-    files.sort()
+    files = sort_chunks(files)
+    logging.info("  Chunk order: " + ", ".join(os.path.basename(f) for f in files))
+    check_chunk_timestamps(files)
 
     # Load images and concatenate
     combined_image = np.concatenate([tifffile.imread(f) for f in files], axis=0)  # Change axis if needed for your images
